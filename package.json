@@ -1,0 +1,22 @@
+{
+  "name": "clean-chat",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty",
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
+    "lint": "oxlint packages"
+  },
+  "devDependencies": {
+    "oxlint": "^1.79.0",
+    "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

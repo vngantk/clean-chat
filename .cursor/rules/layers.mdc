@@ -1,0 +1,21 @@
+---
+description: Enforce inward-only imports between Clean Architecture packages
+globs: packages/**/*.ts
+alwaysApply: false
+---
+
+# Layer imports
+
+```ts
+// ❌ BAD — domain must not know about use cases or databases
+import { SendMessage } from "@clean-chat/use-cases";
+import { Postgres } from "@clean-chat/infrastructure";
+
+// ✅ GOOD — use case depends on domain + ports it owns
+import type { Channel } from "@clean-chat/domain";
+```
+
+- `@clean-chat/domain` — no workspace package imports
+- `@clean-chat/use-cases` — `@clean-chat/domain` only
+- `@clean-chat/application` — domain + use-cases
+- `@clean-chat/infrastructure` — any inner package; implement ports here
