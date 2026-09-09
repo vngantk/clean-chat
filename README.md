@@ -26,11 +26,13 @@ You need Node 20+. There is no app to start yet.
 ```bash
 npm install
 npm run typecheck
+npm test
 ```
 
 ## Scripts
 
 - `npm run typecheck` — `tsc -b` across the four packages
+- `npm test` — Vitest (interactors, mocked ports)
 - `npm run build` — emit `packages/*/dist`
 - `npm run lint` — oxlint
 - `npm run clean` — remove build output

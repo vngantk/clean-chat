@@ -10,6 +10,7 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - TypeBox: `@sinclair/typebox` in `@clean-chat/domain`, `@clean-chat/contracts`, and `@clean-chat/application` (`NewMessage`)
 - Driving use cases live in `packages/contracts/src/use-cases/` and are imported as `@clean-chat/contracts/use-cases`
 - Explicit realtime: `AppEvent` + `EventSubscriber` (contracts); `EventPublisher` (application); publish after `UnitOfWork.run` commits
+- Interactor tests: Vitest, ports mocked (`npm test`)
 - Persistence: repository ports in application take `TransactionContext`; `AuthPort` does not (sessions/hashes)
 - No UI framework, database, auth library, or realtime transport chosen yet
 

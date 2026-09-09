@@ -116,6 +116,7 @@ execute
 | `packages/application/src/` | `EventPublisher`, `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
+| `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 
