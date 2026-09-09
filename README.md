@@ -1,18 +1,18 @@
 # Clean Chat
 
-A **Clean Architecture** reimplementation of the Slack-style chat in the sibling **convex-chat** repo. Behavior is defined by [docs/PRODUCT.md](docs/PRODUCT.md), not by Convex APIs.
+A **Clean Architecture** reimplementation of the Slack-style chat in the sibling **convex-chat** repo. Behavior is defined by [docs/PRODUCT.md](docs/PRODUCT.md), not by Convex APIs. Domain types: [docs/DOMAIN.md](docs/DOMAIN.md).
 
 This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Scaffolding only. Packages compile; there is no runnable UI or persistence yet. We will fill layers inward-to-outward: Domain → Use Cases → Application → Infrastructure.
+Domain entities compile as TypeBox schemas and inferred plain types ([docs/DOMAIN.md](docs/DOMAIN.md)). Use cases, application, and infrastructure are still empty. There is no runnable UI or persistence yet.
 
 ## Layout
 
 | Package | Layer | May import |
 | --- | --- | --- |
-| `@clean-chat/domain` | Entities, value objects, domain errors | nothing |
+| `@clean-chat/domain` | Entities, value objects, domain errors | `@sinclair/typebox` only |
 | `@clean-chat/use-cases` | Interactors + outbound ports | domain |
 | `@clean-chat/application` | Inbound adapters, presenters, DTOs | domain, use-cases |
 | `@clean-chat/infrastructure` | Frameworks, drivers, composition root | inner packages |

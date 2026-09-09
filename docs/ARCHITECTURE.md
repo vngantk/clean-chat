@@ -1,8 +1,8 @@
 # Architecture (this Clean Architecture port)
 
-How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs.
+How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the **scaffold** and the intended dependency rule. Inner layers are empty on purpose. Frameworks (database, auth, React, realtime transport) are **not chosen yet**.
+This document describes the intended dependency rule. Domain entities exist as TypeBox schemas and inferred plain types. Use cases, application, and infrastructure are still empty. Frameworks (database, auth, React, realtime transport) are **not chosen yet**.
 
 ## Why these layers
 
@@ -61,7 +61,7 @@ Outbound ports we expect (still unwritten): channel repository, message reposito
 
 | Concern | Layer |
 | --- | --- |
-| Slug rules, message body limits, “author may delete” | Domain (invariants) and/or use case (application policy) — we will decide in Domain |
+| Slug rules, message body limits | Domain TypeBox schemas (`ChannelNameSchema`, `MessageBodySchema`) |
 | `Channel names must be 1–32 characters.` | Same strings as PRODUCT.md |
 | Password hashing, session cookies/JWT | Infrastructure (auth adapter) |
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
@@ -72,8 +72,12 @@ Outbound ports we expect (still unwritten): channel repository, message reposito
 
 | Path | Role |
 | --- | --- |
-| `packages/domain/src/index.ts` | Domain barrel (empty) |
-| `packages/use-cases/src/index.ts` | Use-case barrel |
+| `packages/domain/src/user/` | `User`, email, display name, password length |
+| `packages/domain/src/channel/` | `Channel`, slug normalize + pattern |
+| `packages/domain/src/message/` | `Message`, body limits |
+| `packages/domain/src/typing/` | `Typing`, debounce / expiry constants |
+| `packages/domain/src/presence/` | `Presence`, session id |
+| `packages/use-cases/src/index.ts` | Use-case barrel (empty) |
 | `packages/application/src/index.ts` | Interface-adapter barrel |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
@@ -87,4 +91,4 @@ Outbound ports we expect (still unwritten): channel repository, message reposito
 
 ## Next
 
-Fill **Domain** first: identities, entities, value objects, domain errors. Then use cases and ports. Application and infrastructure stay empty until those discussions.
+Use cases and outbound ports. Application and infrastructure stay empty until those discussions.

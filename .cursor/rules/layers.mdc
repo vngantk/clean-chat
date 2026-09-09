@@ -11,8 +11,10 @@ alwaysApply: false
 import { SendMessage } from "@clean-chat/use-cases";
 import { Postgres } from "@clean-chat/infrastructure";
 
-// ✅ GOOD — use case depends on domain + ports it owns
-import type { Channel } from "@clean-chat/domain";
+// ✅ GOOD — schema first, then a plain type
+import { Type, type Static } from "@sinclair/typebox";
+export const ChannelSchema = Type.Object({ /* ... */ });
+export type Channel = Static<typeof ChannelSchema>;
 ```
 
 - `@clean-chat/domain` — no workspace package imports
