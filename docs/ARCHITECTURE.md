@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Infrastructure (database, auth, React, realtime transport) is **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. Auth, React, and realtime transport are **not chosen yet**.
 
 ## Why these layers
 
@@ -64,11 +64,11 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 
 `EventPublisher` (application) and `EventSubscriber` (contracts) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
 
-Interactors implement every `UseCase` in `@clean-chat/contracts/use-cases`. Infrastructure adapters that implement the ports are next.
+Interactors implement every `UseCase` in `@clean-chat/contracts/use-cases`. Persistence is in-memory (`packages/infrastructure/src/memory/`).
 
 ## Outbound ports
 
-Interfaces live under `packages/application/src/` (repositories in `src/repositories/`). The frontend never imports these. Infrastructure implements them later.
+Interfaces live under `packages/application/src/` (repositories in `src/repositories/`). The frontend never imports these. Infrastructure currently implements them in memory.
 
 **Transaction:** one `execute()` is one transaction. `UnitOfWork.run` supplies an opaque `TransactionContext`. Every persistence method takes `tx` first. Use cases only forward it. Do not nest use cases.
 
@@ -117,6 +117,7 @@ execute
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
+| `packages/infrastructure/src/memory/` | In-memory `UnitOfWork` + repositories |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 
@@ -129,4 +130,4 @@ execute
 
 ## Next
 
-Infrastructure adapters that implement the ports, then a composition root.
+In-memory `AuthPort`, `Clock`, `IdGenerator`, and `EventPublisher`, then a composition root.

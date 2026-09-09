@@ -6,7 +6,10 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
-    include: ["packages/application/test/**/*.test.ts"],
+    include: [
+      "packages/application/test/**/*.test.ts",
+      "packages/infrastructure/test/**/*.test.ts",
+    ],
   },
   resolve: {
     alias: {
@@ -17,6 +20,10 @@ export default defineConfig({
       "@clean-chat/contracts": path.join(
         root,
         "packages/contracts/src/index.ts",
+      ),
+      "@clean-chat/application": path.join(
+        root,
+        "packages/application/src/index.ts",
       ),
       "@clean-chat/domain": path.join(root, "packages/domain/src/index.ts"),
     },

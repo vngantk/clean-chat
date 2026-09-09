@@ -10,9 +10,9 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - TypeBox: `@sinclair/typebox` in `@clean-chat/domain`, `@clean-chat/contracts`, and `@clean-chat/application` (`NewMessage`)
 - Driving use cases live in `packages/contracts/src/use-cases/` and are imported as `@clean-chat/contracts/use-cases`
 - Explicit realtime: `AppEvent` + `EventSubscriber` (contracts); `EventPublisher` (application); publish after `UnitOfWork.run` commits
-- Interactor tests: Vitest, ports mocked (`npm test`)
-- Persistence: repository ports in application take `TransactionContext`; `AuthPort` does not (sessions/hashes)
-- No UI framework, database, auth library, or realtime transport chosen yet
+- Interactor tests: Vitest, ports mocked (`npm test`); in-memory persistence tests live next to the adapter
+- Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes)
+- No UI framework, auth library, or realtime transport chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
 
@@ -25,7 +25,7 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
 | `packages/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber`. |
 | `packages/application` | Driven ports plus interactors (`src/interactors/`) that implement `UseCase.execute`. |
-| `packages/infrastructure` | Implements ports. Composition root. Frameworks. |
+| `packages/infrastructure` | In-memory persistence adapters. Composition root later. Frameworks. |
 
 Preserve JSDoc on public types, ports, and use-case functions.
 

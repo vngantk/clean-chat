@@ -1,10 +1,20 @@
 /**
  * Infrastructure layer — frameworks and drivers.
  *
- * Persistence, auth, realtime transport, clocks, and the composition root
- * will live here. This package may import the inner layers and implement
- * their ports. Inner layers must never import this package.
- *
- * No database, auth library, or UI framework has been chosen yet.
+ * Persistence is an in-memory adapter for now (`src/memory/`). Auth, realtime
+ * transport, and a composition root will live here later. This package may
+ * import the inner layers and implement their ports. Inner layers must never
+ * import this package.
  */
-export {};
+
+export {
+  createInMemoryChannelRepository,
+  createInMemoryMessageRepository,
+  createInMemoryPersistence,
+  createInMemoryPresenceRepository,
+  createInMemoryStore,
+  createInMemoryTypingRepository,
+  createInMemoryUnitOfWork,
+  createInMemoryUserRepository,
+  type InMemoryStore,
+} from "./memory/index.js";

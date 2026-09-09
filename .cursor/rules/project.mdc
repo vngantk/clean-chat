@@ -14,5 +14,5 @@ Same product as convex-chat, different architecture. Read `AGENTS.md`. Behavior:
 - Use cases are `UseCase<Input, Output>` type aliases. One `execute` is one `UnitOfWork.run`. Persistence methods take `TransactionContext`. Publish `AppEvent` after commit. The UI listens with `EventSubscriber`.
 - Preserve JSDoc on public types, ports, and use-case functions.
 - Do not add DMs, file uploads, Clerk, Next.js, a router, or password-reset email unless requested
-- Do not pick a database, auth library, or UI framework until that layer is being discussed
+- Persistence is in-memory (`@clean-chat/infrastructure` `src/memory/`). Do not pick a SQL database, auth library, or UI framework until that layer is being discussed
 - Do not copy Convex `api.*`, `useQuery`, or `_id` / `_creationTime` into the domain
