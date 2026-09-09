@@ -5,11 +5,12 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 ## Stack (scaffold)
 
 - TypeScript (strict, NodeNext) npm workspaces
-- Four packages: `domain` → `use-cases` → `application` → `infrastructure`
+- Four packages: `domain` → `contracts` → `application` → `infrastructure`
 - Domain entities: TypeBox schema first (`XxxSchema`), then `type Xxx = Static<typeof XxxSchema>`
-- TypeBox: `@sinclair/typebox` in `@clean-chat/domain` and `@clean-chat/use-cases`
-- Explicit realtime: `EventPublisher` (use cases) + `EventSubscriber` (application); publish after `UnitOfWork.run` commits
-- Persistence: repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes)
+- TypeBox: `@sinclair/typebox` in `@clean-chat/domain`, `@clean-chat/contracts`, and `@clean-chat/application` (`NewMessage`)
+- Driving use cases live in `packages/contracts/src/use-cases/`
+- Explicit realtime: `AppEvent` + `EventSubscriber` (contracts); `EventPublisher` (application); publish after `UnitOfWork.run` commits
+- Persistence: repository ports in application take `TransactionContext`; `AuthPort` does not (sessions/hashes)
 - No UI framework, database, auth library, or realtime transport chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
@@ -21,8 +22,8 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | Package | Role |
 | --- | --- |
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
-| `packages/use-cases` | One interactor per product action (`UseCase<I, O>`). Ports: repositories, `UnitOfWork`, `EventPublisher`. |
-| `packages/application` | Interface adapters: `EventSubscriber`, presenters, inbound ports the UI will call. |
+| `packages/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber`. |
+| `packages/application` | Driven ports (repos, `UnitOfWork`, `AuthPort`, `EventPublisher`, …). |
 | `packages/infrastructure` | Implements ports. Composition root. Frameworks. |
 
 Preserve JSDoc on public types, ports, and use-case functions.

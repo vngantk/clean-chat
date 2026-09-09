@@ -6,15 +6,15 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, and repository ports compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Execute bodies, persistence adapters, and a runnable UI are not written yet.
+Domain entities, use-case Input/Output, and server-side repository ports compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Execute bodies, persistence adapters, and a runnable UI are not written yet.
 
 ## Layout
 
 | Package | Layer | May import |
 | --- | --- | --- |
 | `@clean-chat/domain` | Entities, value objects, domain errors | `@sinclair/typebox` only |
-| `@clean-chat/use-cases` | Interactors + outbound ports | domain |
-| `@clean-chat/application` | Inbound adapters, presenters, DTOs | domain, use-cases |
+| `@clean-chat/contracts` | Driving use cases + `AppEvent` + `EventSubscriber` | domain |
+| `@clean-chat/application` | Driven ports (`UnitOfWork`, repos, `EventPublisher`, …) | domain, contracts |
 | `@clean-chat/infrastructure` | Frameworks, drivers, composition root | inner packages |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the dependency rule and how this maps to Uncle Bob’s concentric circles.

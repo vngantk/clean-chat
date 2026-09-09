@@ -11,12 +11,12 @@ Uncle Bob’s circles, named to match how we will build:
 | Circle | Package | Responsibility |
 | --- | --- | --- |
 | Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
-| Use cases | `@clean-chat/use-cases` | “Send a message”, “create a channel”, … plus **outbound ports** |
-| Interface adapters | `@clean-chat/application` | Presenters, inbound facades, DTO mapping |
+| Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
+| Application | `@clean-chat/application` | Server driven ports (repos, `UnitOfWork`, `EventPublisher`, …) |
 | Frameworks & drivers | `@clean-chat/infrastructure` | DB, password hashing, websockets, React (later), composition root |
 
 ```
-  infrastructure  ──►  application  ──►  use-cases  ──►  domain
+  infrastructure  ──►  application  ──►  contracts  ──►  domain
         │                    │                │
         └─────────────────────┴────────────────────┘
               dependencies point inward only
@@ -62,13 +62,13 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 | `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
 | `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
-`EventPublisher` (use cases) and `EventSubscriber` (application) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
+`EventPublisher` (application) and `EventSubscriber` (contracts) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
 
-Execute bodies are not written yet. Repository **ports** are.
+Execute bodies are not written yet. Driven **ports** live in application.
 
 ## Outbound ports
 
-Interfaces in `packages/use-cases/src/ports/`. Infrastructure implements them later.
+Interfaces live under `packages/application/src/` (repositories in `src/repositories/`). The frontend never imports these. Infrastructure implements them later.
 
 **Transaction:** one `execute()` is one transaction. `UnitOfWork.run` supplies an opaque `TransactionContext`. Every persistence method takes `tx` first. Use cases only forward it. Do not nest use cases.
 
@@ -110,12 +110,11 @@ execute
 | `packages/domain/src/message/` | `Message`, body limits |
 | `packages/domain/src/typing/` | `Typing`, debounce / expiry constants |
 | `packages/domain/src/presence/` | `Presence`, session id |
-| `packages/use-cases/src/use-case.ts` | `UseCase<Input, Output>` |
-| `packages/use-cases/src/events.ts` | `AppEvent` + `EventPublisher` |
-| `packages/use-cases/src/auth.ts` … `presence.ts` | Input schemas + use-case types |
-| `packages/use-cases/src/ports/` | `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
-| `packages/use-cases/src/ports/repositories/` | Channel, Message, User, Typing, Presence repositories |
-| `packages/application/src/event-subscriber.ts` | `EventSubscriber` |
+| `packages/contracts/src/use-cases/` | Driving ports: `UseCase<Input, Output>` and JSON I/O |
+| `packages/contracts/src/events.ts` | `AppEvent` payloads |
+| `packages/contracts/src/event-subscriber.ts` | `EventSubscriber` (UI listens) |
+| `packages/application/src/` | `EventPublisher`, `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
+| `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 

@@ -13,6 +13,6 @@
   "dependencies": {
     "@clean-chat/application": "*",
     "@clean-chat/domain": "*",
-    "@clean-chat/use-cases": "*"
+    "@clean-chat/contracts": "*"
   }
 }

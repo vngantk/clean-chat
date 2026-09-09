@@ -66,14 +66,6 @@ export const AppEventSchema = Type.Union([
 
 export type AppEvent = Static<typeof AppEventSchema>;
 
-/**
- * Outbound port. Call **after** `UnitOfWork.run` commits so subscribers never
- * see rolled-back writes. Implemented in infrastructure.
- */
-export interface EventPublisher {
-  publish(event: AppEvent): Promise<void>;
-}
-
 export function channelListChanged(): ChannelListChanged {
   return { type: "channel-list-changed" };
 }

@@ -1,4 +1,4 @@
-import type { AppEvent } from "@clean-chat/use-cases";
+import type { AppEvent } from "./events.js";
 
 /** Stop receiving events. Call on unmount, channel change, or sign-out. */
 export type Unsubscribe = () => void;

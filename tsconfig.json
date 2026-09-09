@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     { "path": "./packages/domain" },
-    { "path": "./packages/use-cases" },
+    { "path": "./packages/contracts" },
     { "path": "./packages/application" },
     { "path": "./packages/infrastructure" }
   ]
