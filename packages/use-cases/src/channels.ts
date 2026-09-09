@@ -1,0 +1,45 @@
+import { Type, type Static } from "@sinclair/typebox";
+import {
+  ChannelIdSchema,
+  ChannelSchema,
+  type Channel,
+  type ChannelId,
+} from "@clean-chat/domain";
+import type { UseCase } from "./use-case.js";
+
+export const ChannelListSchema = Type.Array(ChannelSchema);
+
+export type ChannelList = Static<typeof ChannelListSchema>;
+
+/**
+ * All channels, `general` first then alphabetical.
+ * Signed out → `[]`.
+ */
+export type ListChannels = UseCase<void, Channel[]>;
+
+/**
+ * Insert `general` if missing. Auth required.
+ */
+export type EnsureGeneralChannel = UseCase<void, ChannelId>;
+
+/**
+ * Raw create-channel field. Normalize then validate as a channel slug.
+ */
+export const CreateChannelInputSchema = Type.Object(
+  {
+    name: Type.String(),
+  },
+  { additionalProperties: false },
+);
+
+export type CreateChannelInput = Static<typeof CreateChannelInputSchema>;
+
+export const CreateChannelOutputSchema = ChannelIdSchema;
+
+export type CreateChannelOutput = ChannelId;
+
+/**
+ * Create or return the existing channel with that slug.
+ * Publishes `channel-list-changed` when a new row is inserted.
+ */
+export type CreateChannel = UseCase<CreateChannelInput, ChannelId>;

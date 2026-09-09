@@ -10,6 +10,7 @@ Same product as convex-chat, different architecture. Read `AGENTS.md`. Behavior:
 - npm workspaces: `@clean-chat/domain` → `use-cases` → `application` → `infrastructure`
 - Dependencies point inward. Domain imports nothing. Infrastructure may import inner packages. Never the reverse.
 - One domain concept per folder. Schema first: `XxxSchema` with TypeBox, then `type Xxx = Static<typeof XxxSchema>`. No classes.
+- Use cases are `UseCase<Input, Output>` type aliases. Writes publish `AppEvent` via `EventPublisher`. The UI listens with `EventSubscriber` (application layer).
 - Preserve JSDoc on public types, ports, and use-case functions.
 - Do not add DMs, file uploads, Clerk, Next.js, a router, or password-reset email unless requested
 - Do not pick a database, auth library, or UI framework until that layer is being discussed

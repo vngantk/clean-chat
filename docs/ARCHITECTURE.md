@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities exist as TypeBox schemas and inferred plain types. Use cases, application, and infrastructure are still empty. Frameworks (database, auth, React, realtime transport) are **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes publish explicit `AppEvent`s. Infrastructure (database, auth, React, realtime transport) is **not chosen yet**.
 
 ## Why these layers
 
@@ -38,24 +38,33 @@ Browser (SPA, port TBD)
 
 Convex mapped `query` → live read and `mutation` → transactional write. This port must preserve that **user-visible** contract (see PRODUCT.md realtime section). The mechanism is an infrastructure decision.
 
-## Planned use cases
+## Use cases
 
-These replace `api.<file>.<export>` in convex-chat. Names are working titles.
+Each action is a `UseCase<Input, Output>`. `Input` / `Output` are JSON-shaped TypeBox types (the FE/BE payload). `void` means no body. The actor is not on `Input` except for sign-in / sign-up.
 
-| Use case | Product action |
-| --- | --- |
-| Sign up / sign in / sign out | Auth card |
-| Get current user | Sidebar footer, loading gate |
-| List channels | Sidebar |
-| Ensure general channel | First shell mount |
-| Create channel | Sidebar plus button |
-| List messages | Thread (latest 50, oldest first, with `authorName`) |
-| Send message | Composer |
-| Delete own message | Hover trash on own bubbles |
-| List / upsert / clear typing | Typing line + 3s expiry |
-| Heartbeat / list / disconnect presence | Facepile |
+Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run the query.
 
-Outbound ports we expect (still unwritten): channel repository, message repository, user/auth port, typing store, presence room, clock, id generator. Live lists need a **subscription** port so the UI is not polling.
+| Type | Input | Output | Publishes |
+| --- | --- | --- | --- |
+| `SignUp` | `{ email, password, name }` | `User` | — |
+| `SignIn` | `{ email, password }` | `User` | — |
+| `SignOut` | `void` | `void` | — |
+| `GetCurrentUser` | `void` | `User \| null` | — |
+| `ListChannels` | `void` | `Channel[]` | — |
+| `EnsureGeneralChannel` | `void` | `ChannelId` | `channel-list-changed` (if inserted) |
+| `CreateChannel` | `{ name }` | `ChannelId` | `channel-list-changed` (if inserted) |
+| `ListMessages` | `{ channelId }` | `Message[]` | — |
+| `SendMessage` | `{ channelId, body }` | `void` | `message-list-changed` |
+| `DeleteOwnMessage` | `{ messageId }` | `void` | `message-list-changed` (if deleted) |
+| `ListTyping` | `{ channelId }` | `Typing[]` | — |
+| `UpsertTyping` / `ClearTyping` | `{ channelId }` | `void` | `typing-changed` |
+| `ListPresence` | `{ channelId }` | `Presence[]` | — |
+| `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
+| `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
+
+`EventPublisher` (use cases) and `EventSubscriber` (application) are implemented by the same infrastructure adapter later.
+
+Execute bodies and repositories are not written yet.
 
 ## What lives where (when we fill it in)
 
@@ -77,8 +86,10 @@ Outbound ports we expect (still unwritten): channel repository, message reposito
 | `packages/domain/src/message/` | `Message`, body limits |
 | `packages/domain/src/typing/` | `Typing`, debounce / expiry constants |
 | `packages/domain/src/presence/` | `Presence`, session id |
-| `packages/use-cases/src/index.ts` | Use-case barrel (empty) |
-| `packages/application/src/index.ts` | Interface-adapter barrel |
+| `packages/use-cases/src/use-case.ts` | `UseCase<Input, Output>` |
+| `packages/use-cases/src/events.ts` | `AppEvent` + `EventPublisher` |
+| `packages/use-cases/src/auth.ts` … `presence.ts` | Input schemas + use-case types |
+| `packages/application/src/event-subscriber.ts` | `EventSubscriber` |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 
@@ -91,4 +102,4 @@ Outbound ports we expect (still unwritten): channel repository, message reposito
 
 ## Next
 
-Use cases and outbound ports. Application and infrastructure stay empty until those discussions.
+Repository ports and `execute` implementations. Infrastructure implements `EventPublisher` / `EventSubscriber`.

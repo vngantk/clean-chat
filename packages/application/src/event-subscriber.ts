@@ -1,0 +1,18 @@
+import type { AppEvent } from "@clean-chat/use-cases";
+
+/** Stop receiving events. Call on unmount, channel change, or sign-out. */
+export type Unsubscribe = () => void;
+
+/**
+ * Outbound port for the UI / controller. Subscribe by event `type`, then
+ * re-run the matching query use case. Filter `channelId` in the handler
+ * when the selected room is React state.
+ *
+ * Implemented in infrastructure together with `EventPublisher`.
+ */
+export interface EventSubscriber {
+  subscribe<T extends AppEvent["type"]>(
+    type: T,
+    handler: (event: Extract<AppEvent, { type: T }>) => void,
+  ): Unsubscribe;
+}

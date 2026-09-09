@@ -11,6 +11,7 @@
   },
   "files": ["dist"],
   "dependencies": {
-    "@clean-chat/domain": "*"
+    "@clean-chat/domain": "*",
+    "@sinclair/typebox": "^0.34.41"
   }
 }

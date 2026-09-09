@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities compile as TypeBox schemas and inferred plain types ([docs/DOMAIN.md](docs/DOMAIN.md)). Use cases, application, and infrastructure are still empty. There is no runnable UI or persistence yet.
+Domain entities and use-case Input/Output compile as TypeBox types ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Execute bodies, persistence, and a runnable UI are not written yet.
 
 ## Layout
 

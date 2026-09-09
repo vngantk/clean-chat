@@ -1,9 +1,10 @@
 /**
  * Application layer — interface adapters.
  *
- * Inbound adapters live here: session/auth context, presenters, DTO mapping,
- * and the shapes a UI or HTTP/WebSocket driver will call. This package may
- * import `@clean-chat/domain` and `@clean-chat/use-cases`. It must not import
- * `@clean-chat/infrastructure`.
+ * Inbound adapters live here: session/auth context, presenters, and the
+ * {@link EventSubscriber} the UI uses to listen for {@link AppEvent}s.
+ * This package may import `@clean-chat/domain` and `@clean-chat/use-cases`.
+ * It must not import `@clean-chat/infrastructure`.
  */
-export {};
+
+export type { EventSubscriber, Unsubscribe } from "./event-subscriber.js";

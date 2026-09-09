@@ -7,7 +7,8 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - TypeScript (strict, NodeNext) npm workspaces
 - Four packages: `domain` → `use-cases` → `application` → `infrastructure`
 - Domain entities: TypeBox schema first (`XxxSchema`), then `type Xxx = Static<typeof XxxSchema>`
-- TypeBox: `@sinclair/typebox` in `@clean-chat/domain` only (until a later layer needs it)
+- TypeBox: `@sinclair/typebox` in `@clean-chat/domain` and `@clean-chat/use-cases`
+- Explicit realtime: `EventPublisher` (use cases) + `EventSubscriber` (application); no implicit query invalidation
 - No UI framework, database, auth library, or realtime transport chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
@@ -19,8 +20,8 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | Package | Role |
 | --- | --- |
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
-| `packages/use-cases` | One interactor per product action. Outbound ports (repositories, clock) live here. |
-| `packages/application` | Interface adapters: presenters, inbound ports the UI will call. |
+| `packages/use-cases` | One interactor per product action (`UseCase<I, O>`). `EventPublisher` and event schemas live here. |
+| `packages/application` | Interface adapters: `EventSubscriber`, presenters, inbound ports the UI will call. |
 | `packages/infrastructure` | Implements ports. Composition root. Frameworks. |
 
 Preserve JSDoc on public types, ports, and use-case functions.
