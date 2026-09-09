@@ -8,7 +8,7 @@ alwaysApply: false
 
 ```ts
 // ❌ BAD — domain must not know about use cases or databases
-import { SendMessage } from "@clean-chat/contracts";
+import { SendMessage } from "@clean-chat/contracts/use-cases";
 import { Postgres } from "@clean-chat/infrastructure";
 
 // ✅ GOOD — schema first, then a plain type
@@ -19,5 +19,5 @@ export type Channel = Static<typeof ChannelSchema>;
 
 - `@clean-chat/domain` — no workspace package imports
 - `@clean-chat/contracts` — `@clean-chat/domain` only
-- `@clean-chat/application` — domain + contracts (driven ports live here)
+- `@clean-chat/application` — domain + contracts (interactors and driven ports live here)
 - `@clean-chat/infrastructure` — any inner package; implement ports here (`UnitOfWork`, repositories, `EventPublisher` + `EventSubscriber`)

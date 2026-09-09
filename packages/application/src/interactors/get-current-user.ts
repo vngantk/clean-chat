@@ -1,0 +1,13 @@
+import type { GetCurrentUser } from "@clean-chat/contracts/use-cases";
+import type { AuthPort } from "../auth.js";
+
+/**
+ * Session lookup. No unit of work — {@link AuthPort} is not transactional.
+ */
+export function createGetCurrentUser(auth: AuthPort): GetCurrentUser {
+  return {
+    execute() {
+      return auth.currentUser();
+    },
+  };
+}

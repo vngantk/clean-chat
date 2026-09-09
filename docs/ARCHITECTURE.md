@@ -12,7 +12,7 @@ Uncle Bob’s circles, named to match how we will build:
 | --- | --- | --- |
 | Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
 | Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
-| Application | `@clean-chat/application` | Server driven ports (repos, `UnitOfWork`, `EventPublisher`, …) |
+| Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
 | Frameworks & drivers | `@clean-chat/infrastructure` | DB, password hashing, websockets, React (later), composition root |
 
 ```
@@ -64,7 +64,7 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 
 `EventPublisher` (application) and `EventSubscriber` (contracts) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
 
-Execute bodies are not written yet. Driven **ports** live in application.
+Interactors implement every `UseCase` in `@clean-chat/contracts/use-cases`. Infrastructure adapters that implement the ports are next.
 
 ## Outbound ports
 
@@ -110,11 +110,12 @@ execute
 | `packages/domain/src/message/` | `Message`, body limits |
 | `packages/domain/src/typing/` | `Typing`, debounce / expiry constants |
 | `packages/domain/src/presence/` | `Presence`, session id |
-| `packages/contracts/src/use-cases/` | Driving ports: `UseCase<Input, Output>` and JSON I/O |
+| `packages/contracts/src/use-cases/` | Driving ports: import as `@clean-chat/contracts/use-cases` |
 | `packages/contracts/src/events.ts` | `AppEvent` payloads |
 | `packages/contracts/src/event-subscriber.ts` | `EventSubscriber` (UI listens) |
 | `packages/application/src/` | `EventPublisher`, `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
+| `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 
@@ -127,4 +128,4 @@ execute
 
 ## Next
 
-`execute` implementations that call `UnitOfWork.run`, repositories, and (after commit) `EventPublisher`. Infrastructure implements the ports.
+Infrastructure adapters that implement the ports, then a composition root.

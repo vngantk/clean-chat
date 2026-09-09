@@ -1,9 +1,8 @@
 /**
  * Shared contracts the frontend and server both see.
  *
- * - `use-cases/` — driving ports: `UseCase<Input, Output>` and JSON I/O
- * - `events.ts` — `AppEvent` payloads
- * - `event-subscriber.ts` — UI listens for those events
+ * Use cases: import from `@clean-chat/contracts/use-cases`, not this barrel.
+ * This module is `AppEvent` payloads and `EventSubscriber`.
  *
  * Driven interfaces (repositories, `UnitOfWork`, `AuthPort`, `EventPublisher`) live
  * in `@clean-chat/application`.
@@ -12,6 +11,5 @@
  * infrastructure.
  */
 
-export * from "./use-cases/index.js";
 export * from "./events.js";
 export type { EventSubscriber, Unsubscribe } from "./event-subscriber.js";

@@ -1,0 +1,13 @@
+import type { SignOut } from "@clean-chat/contracts/use-cases";
+import type { AuthPort } from "../auth.js";
+
+/**
+ * End the session. No unit of work — {@link AuthPort} is not transactional.
+ */
+export function createSignOut(auth: AuthPort): SignOut {
+  return {
+    execute() {
+      return auth.signOut();
+    },
+  };
+}

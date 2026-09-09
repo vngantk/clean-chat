@@ -8,7 +8,7 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Four packages: `domain` → `contracts` → `application` → `infrastructure`
 - Domain entities: TypeBox schema first (`XxxSchema`), then `type Xxx = Static<typeof XxxSchema>`
 - TypeBox: `@sinclair/typebox` in `@clean-chat/domain`, `@clean-chat/contracts`, and `@clean-chat/application` (`NewMessage`)
-- Driving use cases live in `packages/contracts/src/use-cases/`
+- Driving use cases live in `packages/contracts/src/use-cases/` and are imported as `@clean-chat/contracts/use-cases`
 - Explicit realtime: `AppEvent` + `EventSubscriber` (contracts); `EventPublisher` (application); publish after `UnitOfWork.run` commits
 - Persistence: repository ports in application take `TransactionContext`; `AuthPort` does not (sessions/hashes)
 - No UI framework, database, auth library, or realtime transport chosen yet
@@ -23,7 +23,7 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | --- | --- |
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
 | `packages/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber`. |
-| `packages/application` | Driven ports (repos, `UnitOfWork`, `AuthPort`, `EventPublisher`, …). |
+| `packages/application` | Driven ports plus interactors (`src/interactors/`) that implement `UseCase.execute`. |
 | `packages/infrastructure` | Implements ports. Composition root. Frameworks. |
 
 Preserve JSDoc on public types, ports, and use-case functions.
