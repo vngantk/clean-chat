@@ -20,4 +20,4 @@ export type Channel = Static<typeof ChannelSchema>;
 - `@clean-chat/domain` — no workspace package imports
 - `@clean-chat/use-cases` — `@clean-chat/domain` only
 - `@clean-chat/application` — domain + use-cases (`EventSubscriber` lives here)
-- `@clean-chat/infrastructure` — any inner package; implement ports here (`EventPublisher` + `EventSubscriber`)
+- `@clean-chat/infrastructure` — any inner package; implement ports here (`UnitOfWork`, repositories, `EventPublisher` + `EventSubscriber`)

@@ -1,10 +1,11 @@
 /**
  * Use-case layer — application business rules.
  *
- * Interactors are {@link UseCase} types with JSON Input/Output. Writes publish
- * {@link AppEvent} through {@link EventPublisher}. This package may import
- * `@clean-chat/domain` and TypeBox. It must not import application or
- * infrastructure.
+ * Interactors are {@link UseCase} types with JSON Input/Output. Persistence
+ * goes through repositories inside {@link UnitOfWork.run}. After commit,
+ * writes publish {@link AppEvent} through {@link EventPublisher}. This package
+ * may import `@clean-chat/domain` and TypeBox. It must not import application
+ * or infrastructure.
  */
 
 export type {
@@ -98,3 +99,18 @@ export type {
 export { ChannelScopedInputSchema, TypingListSchema } from "./typing.js";
 
 export type { UseCase } from "./use-case.js";
+
+export type {
+  AuthPort,
+  ChannelRepository,
+  Clock,
+  IdGenerator,
+  MessageRepository,
+  NewMessage,
+  PresenceRepository,
+  TransactionContext,
+  TypingRepository,
+  UnitOfWork,
+  UserRepository,
+} from "./ports/index.js";
+export { NewMessageSchema } from "./ports/index.js";

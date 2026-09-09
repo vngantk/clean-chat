@@ -8,7 +8,8 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Four packages: `domain` → `use-cases` → `application` → `infrastructure`
 - Domain entities: TypeBox schema first (`XxxSchema`), then `type Xxx = Static<typeof XxxSchema>`
 - TypeBox: `@sinclair/typebox` in `@clean-chat/domain` and `@clean-chat/use-cases`
-- Explicit realtime: `EventPublisher` (use cases) + `EventSubscriber` (application); no implicit query invalidation
+- Explicit realtime: `EventPublisher` (use cases) + `EventSubscriber` (application); publish after `UnitOfWork.run` commits
+- Persistence: repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes)
 - No UI framework, database, auth library, or realtime transport chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
@@ -20,7 +21,7 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | Package | Role |
 | --- | --- |
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
-| `packages/use-cases` | One interactor per product action (`UseCase<I, O>`). `EventPublisher` and event schemas live here. |
+| `packages/use-cases` | One interactor per product action (`UseCase<I, O>`). Ports: repositories, `UnitOfWork`, `EventPublisher`. |
 | `packages/application` | Interface adapters: `EventSubscriber`, presenters, inbound ports the UI will call. |
 | `packages/infrastructure` | Implements ports. Composition root. Frameworks. |
 

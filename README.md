@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities and use-case Input/Output compile as TypeBox types ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Execute bodies, persistence, and a runnable UI are not written yet.
+Domain entities, use-case Input/Output, and repository ports compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Execute bodies, persistence adapters, and a runnable UI are not written yet.
 
 ## Layout
 

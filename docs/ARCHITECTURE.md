@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes publish explicit `AppEvent`s. Infrastructure (database, auth, React, realtime transport) is **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Infrastructure (database, auth, React, realtime transport) is **not chosen yet**.
 
 ## Why these layers
 
@@ -62,9 +62,33 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 | `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
 | `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
-`EventPublisher` (use cases) and `EventSubscriber` (application) are implemented by the same infrastructure adapter later.
+`EventPublisher` (use cases) and `EventSubscriber` (application) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
 
-Execute bodies and repositories are not written yet.
+Execute bodies are not written yet. Repository **ports** are.
+
+## Outbound ports
+
+Interfaces in `packages/use-cases/src/ports/`. Infrastructure implements them later.
+
+**Transaction:** one `execute()` is one transaction. `UnitOfWork.run` supplies an opaque `TransactionContext`. Every persistence method takes `tx` first. Use cases only forward it. Do not nest use cases.
+
+**`AuthPort`** (no `tx`): `signUp` / `signIn` / `signOut` / `currentUser`. Sessions and password hashes are not the chat-table unit of work.
+
+**`UserRepository`:** `getById(tx, id)` — display names only.
+
+**`ChannelRepository`:** `list`, `getById`, `getByName`, `insert`.
+
+**`MessageRepository`:** `listLatestByChannel` (join `authorName`), `getById`, `insert(NewMessage)`, `remove`.
+
+**`TypingRepository` / `PresenceRepository`:** list / get / put / remove keyed as in PRODUCT.md.
+
+**`Clock.now()`** and **`IdGenerator.next()`** are not transactional.
+
+```
+execute
+  └─ uow.run(tx => repos.*(tx, …))
+  └─ publisher.publish(event)   // after commit
+```
 
 ## What lives where (when we fill it in)
 
@@ -89,6 +113,8 @@ Execute bodies and repositories are not written yet.
 | `packages/use-cases/src/use-case.ts` | `UseCase<Input, Output>` |
 | `packages/use-cases/src/events.ts` | `AppEvent` + `EventPublisher` |
 | `packages/use-cases/src/auth.ts` … `presence.ts` | Input schemas + use-case types |
+| `packages/use-cases/src/ports/` | `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
+| `packages/use-cases/src/ports/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/event-subscriber.ts` | `EventSubscriber` |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
@@ -102,4 +128,4 @@ Execute bodies and repositories are not written yet.
 
 ## Next
 
-Repository ports and `execute` implementations. Infrastructure implements `EventPublisher` / `EventSubscriber`.
+`execute` implementations that call `UnitOfWork.run`, repositories, and (after commit) `EventPublisher`. Infrastructure implements the ports.

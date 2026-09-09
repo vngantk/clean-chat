@@ -67,8 +67,8 @@ export const AppEventSchema = Type.Union([
 export type AppEvent = Static<typeof AppEventSchema>;
 
 /**
- * Outbound port. Write use cases publish after a successful change.
- * Implemented in infrastructure (in-process bus, WebSocket fan-out, …).
+ * Outbound port. Call **after** `UnitOfWork.run` commits so subscribers never
+ * see rolled-back writes. Implemented in infrastructure.
  */
 export interface EventPublisher {
   publish(event: AppEvent): Promise<void>;
