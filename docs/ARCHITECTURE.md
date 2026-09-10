@@ -13,7 +13,7 @@ Uncle Bob’s circles, named to match how we will build:
 | Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
 | Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, React later, composition root |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createBackend`, React later |
 
 ```
   infrastructure  ──►  application  ──►  contracts  ──►  domain
@@ -123,7 +123,9 @@ execute
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, `createInMemoryEventBus`, `createInMemoryAuth`, `createSystemClock`, `createRandomIdGenerator` |
 | `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers + HTTP clients |
-| `packages/infrastructure/src/index.ts` | Drivers + future composition root |
+| `packages/infrastructure/src/index.ts` | Drivers + composition root |
+| `packages/infrastructure/src/backend.ts` | `createBackend` wires adapters, interactors, Express |
+| `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST` |
 | `docs/PRODUCT.md` | Behavior to match |
 
 ## What not to copy from convex-chat
@@ -135,4 +137,4 @@ execute
 
 ## Next
 
-A composition root that wires interactors, in-memory adapters, and Express.
+A runnable UI (the chat SPA).

@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, interactors, in-memory persistence, auth, event bus, and Express HTTP (server routers, `Lifecycle`, and HTTP clients) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A composition root and a runnable UI are not written yet.
+Domain entities, use-case Input/Output, interactors, in-memory adapters, Express HTTP, and a composition root (`createBackend`) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A runnable UI is not written yet.
 
 ## Layout
 
@@ -21,13 +21,16 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the dependency rule and how
 
 ## Run it
 
-You need Node 20+. There is no app to start yet.
+You need Node 20+.
 
 ```bash
 npm install
 npm run typecheck
 npm test
+npm start
 ```
+
+`npm start` builds and listens on `http://127.0.0.1:3000` (`PORT` / `HOST` override). Use cases are `POST /use-cases/{name}`; events are `GET /events/{type}` (SSE).
 
 ## Scripts
 
@@ -36,3 +39,4 @@ npm test
 - `npm run build` — emit `packages/*/dist`
 - `npm run lint` — oxlint
 - `npm run clean` — remove build output
+- `npm start` — build and run the Express composition root

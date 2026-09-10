@@ -9,8 +9,8 @@
  * HTTP clients are {@link createHttpUseCase} and
  * {@link createHttpEventSubscriber}. In-memory {@link createInMemoryAuth}
  * (scrypt hashes, one process session), {@link createSystemClock}, and
- * {@link createRandomIdGenerator} are here. A composition root will live
- * here later. This
+ * {@link createRandomIdGenerator} are here. {@link createBackend} is the
+ * composition root. This
  * package may import the inner layers and implement their ports. Inner
  * layers must never import this package.
  */
@@ -44,3 +44,4 @@ export {
   type HttpUseCase,
   type Lifecycle,
 } from "./http/index.js";
+export { createBackend, type Backend, type BackendOptions } from "./backend.js";
