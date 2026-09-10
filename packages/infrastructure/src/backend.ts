@@ -85,65 +85,24 @@ export function createBackend(options: BackendOptions = {}): Backend {
   const { uow, channels, messages, typing, presence } = persistence;
   const validator = options.validator ?? createTypeBoxInputValidator();
 
-  const useCases = validateUseCases(validator, {
-    "sign-up": createSignUp(auth),
-    "sign-in": createSignIn(auth),
-    "sign-out": createSignOut(auth),
-    "get-current-user": createGetCurrentUser(auth),
-    "list-channels": createListChannels({ auth, uow, channels }),
-    "ensure-general-channel": createEnsureGeneralChannel({
-      auth,
-      uow,
-      channels,
-      ids,
-      events,
-    }),
-    "create-channel": createCreateChannel({
-      auth,
-      uow,
-      channels,
-      ids,
-      events,
-    }),
-    "list-messages": createListMessages({ auth, uow, messages }),
-    "send-message": createSendMessage({
-      auth,
-      uow,
-      channels,
-      messages,
-      clock,
-      ids,
-      events,
-    }),
-    "delete-own-message": createDeleteOwnMessage({
-      auth,
-      uow,
-      messages,
-      events,
-    }),
-    "list-typing": createListTyping({ auth, uow, typing, clock }),
-    "upsert-typing": createUpsertTyping({
-      auth,
-      uow,
-      typing,
-      clock,
-      events,
-    }),
-    "clear-typing": createClearTyping({ auth, uow, typing, events }),
-    "list-presence": createListPresence({ auth, uow, presence }),
-    "heartbeat-presence": createHeartbeatPresence({
-      auth,
-      uow,
-      presence,
-      events,
-    }),
-    "disconnect-presence": createDisconnectPresence({
-      auth,
-      uow,
-      presence,
-      events,
-    }),
-  });
+  const useCases = validateUseCases(validator, [
+    createSignUp(auth),
+    createSignIn(auth),
+    createSignOut(auth),
+    createGetCurrentUser(auth),
+    createListChannels({ auth, uow, channels }),
+    createEnsureGeneralChannel({auth, uow, channels, ids, events,}),
+    createCreateChannel({auth, uow, channels, ids, events,}),
+    createListMessages({ auth, uow, messages }),
+    createSendMessage({auth, uow, channels, messages, clock, ids, events,}),
+    createDeleteOwnMessage({auth, uow, messages, events,}),
+    createListTyping({ auth, uow, typing, clock }),
+    createUpsertTyping({auth, uow, typing, clock, events,}),
+    createClearTyping({ auth, uow, typing, events }),
+    createListPresence({ auth, uow, presence }),
+    createHeartbeatPresence({auth, uow, presence, events,}),
+    createDisconnectPresence({auth, uow, presence, events,}),
+  ]);
 
   const server = createExpressServer({
     routers: {
@@ -180,16 +139,14 @@ export function createBackend(options: BackendOptions = {}): Backend {
 
 function validateUseCases(
   validator: InputValidator,
-  useCases: Record<string, HttpUseCase>,
-): Record<string, HttpUseCase> {
-  const bound: Record<string, HttpUseCase> = {};
-  for (const [name, useCase] of Object.entries(useCases)) {
-    const schema = useCaseInputSchemas[name];
-    bound[name] = createValidatedUseCase({
+  useCases: readonly HttpUseCase[],
+): HttpUseCase[] {
+  return useCases.map((useCase) => {
+    const schema = useCaseInputSchemas[useCase.name];
+    return createValidatedUseCase({
       validator,
       useCase,
       ...(schema === undefined ? {} : { schema }),
     });
-  }
-  return bound;
+  });
 }

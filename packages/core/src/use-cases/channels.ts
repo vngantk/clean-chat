@@ -15,12 +15,20 @@ export type ChannelList = Static<typeof ChannelListSchema>;
  * All channels, `general` first then alphabetical.
  * Signed out → `[]`.
  */
-export type ListChannels = UseCase<void, Channel[]>;
+export const ListChannelsName = "list-channels" as const;
+
+export type ListChannels = UseCase<void, Channel[], typeof ListChannelsName>;
 
 /**
  * Insert `general` if missing. Auth required.
  */
-export type EnsureGeneralChannel = UseCase<void, ChannelId>;
+export const EnsureGeneralChannelName = "ensure-general-channel" as const;
+
+export type EnsureGeneralChannel = UseCase<
+  void,
+  ChannelId,
+  typeof EnsureGeneralChannelName
+>;
 
 /**
  * Raw create-channel field. Normalize then validate as a channel slug.
@@ -42,4 +50,10 @@ export type CreateChannelOutput = ChannelId;
  * Create or return the existing channel with that slug.
  * Publishes `channel-list-changed` when a new row is inserted.
  */
-export type CreateChannel = UseCase<CreateChannelInput, ChannelId>;
+export const CreateChannelName = "create-channel" as const;
+
+export type CreateChannel = UseCase<
+  CreateChannelInput,
+  ChannelId,
+  typeof CreateChannelName
+>;

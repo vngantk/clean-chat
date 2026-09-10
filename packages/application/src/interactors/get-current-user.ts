@@ -1,4 +1,4 @@
-import type { GetCurrentUser } from "@clean-chat/core/use-cases";
+import { GetCurrentUserName, type GetCurrentUser } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 
 /**
@@ -6,6 +6,7 @@ import type { AuthPort } from "../auth.js";
  */
 export function createGetCurrentUser(auth: AuthPort): GetCurrentUser {
   return {
+    name: GetCurrentUserName,
     execute() {
       return auth.currentUser();
     },

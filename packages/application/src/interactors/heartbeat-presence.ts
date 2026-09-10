@@ -1,5 +1,5 @@
 import { presenceChanged } from "@clean-chat/core";
-import type { HeartbeatPresence } from "@clean-chat/core/use-cases";
+import { HeartbeatPresenceName, type HeartbeatPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
@@ -18,6 +18,7 @@ export function createHeartbeatPresence(deps: {
   events: EventPublisher;
 }): HeartbeatPresence {
   return {
+    name: HeartbeatPresenceName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const membershipChanged = await deps.uow.run(async (tx) => {

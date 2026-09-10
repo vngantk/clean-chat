@@ -1,5 +1,5 @@
 import { messageListChanged } from "@clean-chat/core";
-import type { SendMessage } from "@clean-chat/core/use-cases";
+import { SendMessageName, type SendMessage } from "@clean-chat/core/use-cases";
 import {
   CHANNEL_NOT_FOUND_ERROR,
   MESSAGE_BODY_MAX_LENGTH,
@@ -30,6 +30,7 @@ export function createSendMessage(deps: {
   events: EventPublisher;
 }): SendMessage {
   return {
+    name: SendMessageName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const body = trimMessageBody(input.body);

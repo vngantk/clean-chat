@@ -42,27 +42,27 @@ Convex mapped `query` → live read and `mutation` → transactional write. This
 
 ## Use cases
 
-Each action is a `UseCase<Input, Output>`. `Input` / `Output` are JSON-shaped TypeBox types (the FE/BE payload). `void` means no body. The actor is not on `Input` except for sign-in / sign-up.
+Each action is a `UseCase<Input, Output>` with a readonly `name` (HTTP `POST /use-cases/{name}`). `Input` / `Output` are JSON-shaped TypeBox types (the FE/BE payload). `void` means no body. The actor is not on `Input` except for sign-in / sign-up.
 
 Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run the query.
 
-| Type | Input | Output | Publishes |
-| --- | --- | --- | --- |
-| `SignUp` | `{ email, password, name }` | `User` | — |
-| `SignIn` | `{ email, password }` | `User` | — |
-| `SignOut` | `void` | `void` | — |
-| `GetCurrentUser` | `void` | `User \| null` | — |
-| `ListChannels` | `void` | `Channel[]` | — |
-| `EnsureGeneralChannel` | `void` | `ChannelId` | `channel-list-changed` (if inserted) |
-| `CreateChannel` | `{ name }` | `ChannelId` | `channel-list-changed` (if inserted) |
-| `ListMessages` | `{ channelId }` | `Message[]` | — |
-| `SendMessage` | `{ channelId, body }` | `void` | `message-list-changed` |
-| `DeleteOwnMessage` | `{ messageId }` | `void` | `message-list-changed` (if deleted) |
-| `ListTyping` | `{ channelId }` | `Typing[]` | — |
-| `UpsertTyping` / `ClearTyping` | `{ channelId }` | `void` | `typing-changed` |
-| `ListPresence` | `{ channelId }` | `Presence[]` | — |
-| `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
-| `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
+| Type | `name` | Input | Output | Publishes |
+| --- | --- | --- | --- | --- |
+| `SignUp` | `sign-up` | `{ email, password, name }` | `User` | — |
+| `SignIn` | `sign-in` | `{ email, password }` | `User` | — |
+| `SignOut` | `sign-out` | `void` | `void` | — |
+| `GetCurrentUser` | `get-current-user` | `void` | `User \| null` | — |
+| `ListChannels` | `list-channels` | `void` | `Channel[]` | — |
+| `EnsureGeneralChannel` | `ensure-general-channel` | `void` | `ChannelId` | `channel-list-changed` (if inserted) |
+| `CreateChannel` | `create-channel` | `{ name }` | `ChannelId` | `channel-list-changed` (if inserted) |
+| `ListMessages` | `list-messages` | `{ channelId }` | `Message[]` | — |
+| `SendMessage` | `send-message` | `{ channelId, body }` | `void` | `message-list-changed` |
+| `DeleteOwnMessage` | `delete-own-message` | `{ messageId }` | `void` | `message-list-changed` (if deleted) |
+| `ListTyping` | `list-typing` | `{ channelId }` | `Typing[]` | — |
+| `UpsertTyping` / `ClearTyping` | `upsert-typing` / `clear-typing` | `{ channelId }` | `void` | `typing-changed` |
+| `ListPresence` | `list-presence` | `{ channelId }` | `Presence[]` | — |
+| `HeartbeatPresence` | `heartbeat-presence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
+| `DisconnectPresence` | `disconnect-presence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
 `EventPublisher` (application) and `EventSubscriber` (core) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
 
@@ -102,7 +102,7 @@ execute
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
 | Tailwind / shadcn / Vite | Infrastructure or a future `packages/web` driving adapter |
 | Selected `channelId` | Presentation state, not a router |
-| HTTP `POST /{useCaseName}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204. Known errors → 401/403/400 `{ error }`; unexpected → 500 `Internal server error`. `sign-in`/`sign-up` are rate-limited; JSON body cap 16kb |
+| HTTP `POST /{useCase.name}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204. Known errors → 401/403/400 `{ error }`; unexpected → 500 `Internal server error`. `sign-in`/`sign-up` are rate-limited; JSON body cap 16kb |
 | HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber`. Requires a bearer session; concurrent streams are capped per token |
 | HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`). `*` CORS only on loopback; Helmet-equivalent headers |
 | HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Non-OK responses throw the `{ error }` string |

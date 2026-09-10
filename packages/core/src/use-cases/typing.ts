@@ -22,16 +22,34 @@ export type TypingList = Static<typeof TypingListSchema>;
 /**
  * Everyone currently typing in the channel (client hides self).
  */
-export type ListTyping = UseCase<ChannelScopedInput, Typing[]>;
+export const ListTypingName = "list-typing" as const;
+
+export type ListTyping = UseCase<
+  ChannelScopedInput,
+  Typing[],
+  typeof ListTypingName
+>;
 
 /**
  * Auth required. Upsert the caller's typing row.
  * Publishes `typing-changed`.
  */
-export type UpsertTyping = UseCase<ChannelScopedInput, void>;
+export const UpsertTypingName = "upsert-typing" as const;
+
+export type UpsertTyping = UseCase<
+  ChannelScopedInput,
+  void,
+  typeof UpsertTypingName
+>;
 
 /**
  * Auth required. Clear the caller's typing row.
  * Publishes `typing-changed` when a row is removed.
  */
-export type ClearTyping = UseCase<ChannelScopedInput, void>;
+export const ClearTypingName = "clear-typing" as const;
+
+export type ClearTyping = UseCase<
+  ChannelScopedInput,
+  void,
+  typeof ClearTypingName
+>;

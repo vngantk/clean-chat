@@ -23,7 +23,13 @@ export type PresenceList = Static<typeof PresenceListSchema>;
 /**
  * Presence rows for a channel. UI shows `online === true`.
  */
-export type ListPresence = UseCase<ListPresenceInput, Presence[]>;
+export const ListPresenceName = "list-presence" as const;
+
+export type ListPresence = UseCase<
+  ListPresenceInput,
+  Presence[],
+  typeof ListPresenceName
+>;
 
 export const HeartbeatPresenceInputSchema = Type.Object(
   {
@@ -40,7 +46,13 @@ export type HeartbeatPresenceInput = Static<typeof HeartbeatPresenceInputSchema>
  * Publishes `presence-changed` only when membership actually changes,
  * not on every heartbeat tick.
  */
-export type HeartbeatPresence = UseCase<HeartbeatPresenceInput, void>;
+export const HeartbeatPresenceName = "heartbeat-presence" as const;
+
+export type HeartbeatPresence = UseCase<
+  HeartbeatPresenceInput,
+  void,
+  typeof HeartbeatPresenceName
+>;
 
 export const DisconnectPresenceInputSchema = Type.Object(
   {
@@ -55,7 +67,13 @@ export type DisconnectPresenceInput = Static<
 >;
 
 /**
- * Drop this tab from the room. Used on unload (may be unauthenticated).
- * Publishes `presence-changed` when membership changes.
+ * Drop this tab from the room. Auth required (keepalive fetch, not anonymous
+ * `sendBeacon`). Publishes `presence-changed` when membership changes.
  */
-export type DisconnectPresence = UseCase<DisconnectPresenceInput, void>;
+export const DisconnectPresenceName = "disconnect-presence" as const;
+
+export type DisconnectPresence = UseCase<
+  DisconnectPresenceInput,
+  void,
+  typeof DisconnectPresenceName
+>;

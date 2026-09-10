@@ -8,9 +8,10 @@ import {
 } from "../src/http/index.js";
 
 function asUseCase(
+  name: string,
   execute: (input: unknown) => Promise<unknown>,
 ): HttpUseCase {
-  return { execute: execute as HttpUseCase["execute"] };
+  return { name, execute: execute as HttpUseCase["execute"] };
 }
 
 async function listen(
@@ -50,7 +51,7 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   async function mount(
-    useCases: Record<string, HttpUseCase>,
+    useCases: HttpUseCase[],
     mountPath?: string,
     routerOptions?: ExpressUseCaseRouterOptions,
   ) {
@@ -68,12 +69,12 @@ describe("createExpressUseCaseRouter", () => {
 
   it("POSTs JSON to the named use case and returns JSON output", async () => {
     const bodies: unknown[] = [];
-    const origin = await mount({
-      echo: asUseCase(async (input) => {
+    const origin = await mount([
+      asUseCase("echo", async (input) => {
         bodies.push(input);
         return { echoed: input };
       }),
-    });
+    ]);
 
     const res = await fetch(`${origin}/echo`, {
       method: "POST",
@@ -87,9 +88,7 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("responds 204 when the use case returns undefined", async () => {
-    const origin = await mount({
-      ping: asUseCase(async () => undefined),
-    });
+    const origin = await mount([asUseCase("ping", async () => undefined)]);
 
     const res = await fetch(`${origin}/ping`, { method: "POST" });
 
@@ -98,11 +97,11 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("responds 500 with a generic body when the use case throws", async () => {
-    const origin = await mount({
-      fail: asUseCase(async () => {
+    const origin = await mount([
+      asUseCase("fail", async () => {
         throw new Error("nope");
       }),
-    });
+    ]);
 
     const res = await fetch(`${origin}/fail`, { method: "POST" });
     expect(res.status).toBe(500);
@@ -112,11 +111,11 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("maps known domain errors to 400 and keeps the message", async () => {
-    const origin = await mount({
-      fail: asUseCase(async () => {
+    const origin = await mount([
+      asUseCase("fail", async () => {
         throw new Error("Invalid input");
       }),
-    });
+    ]);
 
     const res = await fetch(`${origin}/fail`, { method: "POST" });
     expect(res.status).toBe(400);
@@ -124,9 +123,7 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("responds 400 for invalid JSON", async () => {
-    const origin = await mount({
-      echo: asUseCase(async (input) => input),
-    });
+    const origin = await mount([asUseCase("echo", async (input) => input)]);
 
     const res = await fetch(`${origin}/echo`, {
       method: "POST",
@@ -139,7 +136,7 @@ describe("createExpressUseCaseRouter", () => {
 
   it("responds 413 when the JSON body exceeds the limit", async () => {
     const origin = await mount(
-      { echo: asUseCase(async (input) => input) },
+      [asUseCase("echo", async (input) => input)],
       undefined,
       { jsonBodyLimit: "50b" },
     );
@@ -154,9 +151,7 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("responds 404 for an unknown path or GET", async () => {
-    const origin = await mount({
-      echo: asUseCase(async (input) => input),
-    });
+    const origin = await mount([asUseCase("echo", async (input) => input)]);
 
     const missing = await fetch(`${origin}/other`, { method: "POST" });
     const get = await fetch(`${origin}/echo`, { method: "GET" });
@@ -166,10 +161,10 @@ describe("createExpressUseCaseRouter", () => {
   });
 
   it("registers a route per use-case name", async () => {
-    const origin = await mount({
-      a: asUseCase(async () => "A"),
-      b: asUseCase(async () => "B"),
-    });
+    const origin = await mount([
+      asUseCase("a", async () => "A"),
+      asUseCase("b", async () => "B"),
+    ]);
 
     const a = await fetch(`${origin}/a`, { method: "POST" });
     const b = await fetch(`${origin}/b`, { method: "POST" });
@@ -180,7 +175,7 @@ describe("createExpressUseCaseRouter", () => {
 
   it("can be mounted at a path prefix", async () => {
     const origin = await mount(
-      { ping: asUseCase(async () => undefined) },
+      [asUseCase("ping", async () => undefined)],
       "/api",
     );
 
@@ -189,5 +184,14 @@ describe("createExpressUseCaseRouter", () => {
 
     expect(prefixed.status).toBe(204);
     expect(root.status).toBe(404);
+  });
+
+  it("throws when two use cases share a name", () => {
+    expect(() =>
+      createExpressUseCaseRouter([
+        asUseCase("echo", async () => undefined),
+        asUseCase("echo", async () => undefined),
+      ]),
+    ).toThrow(/Duplicate use case name/);
   });
 });

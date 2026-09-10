@@ -11,16 +11,18 @@ export type HttpUseCaseOptions = {
 
 /**
  * Driving adapter: `POST` JSON `Input` to `url`, return JSON `Output`.
- * Uses platform `fetch` (Node 20+ and browsers). Server `void` Output is
- * **204**; this adapter yields `undefined`. Non-OK responses throw with
- * the server `{ error }` string (or `HTTP {status}` if the body is not
- * that shape).
+ * {@link name} is {@link UseCase.name} (HTTP path segment). Uses platform
+ * `fetch` (Node 20+ and browsers). Server `void` Output is **204**; this
+ * adapter yields `undefined`. Non-OK responses throw with the server
+ * `{ error }` string (or `HTTP {status}` if the body is not that shape).
  */
-export function createHttpUseCase<Input, Output>(
+export function createHttpUseCase<Input, Output, Name extends string = string>(
+  name: Name,
   url: string,
   options?: HttpUseCaseOptions,
-): UseCase<Input, Output> {
+): UseCase<Input, Output, Name> {
   return {
+    name,
     async execute(input) {
       const headers: Record<string, string> = {
         "content-type": "application/json",

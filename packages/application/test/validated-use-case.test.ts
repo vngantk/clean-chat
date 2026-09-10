@@ -14,7 +14,10 @@ describe("createValidatedUseCase", () => {
     const useCase = createValidatedUseCase({
       validator: createTypeBoxInputValidator(),
       schema,
-      useCase: { execute: async (input: { n: number }) => input.n },
+      useCase: {
+        name: "n",
+        execute: async (input: { n: number }) => input.n,
+      },
     });
     await expect(useCase.execute({ n: 1 })).resolves.toBe(1);
   });
@@ -23,7 +26,10 @@ describe("createValidatedUseCase", () => {
     const useCase = createValidatedUseCase({
       validator: createTypeBoxInputValidator(),
       schema,
-      useCase: { execute: async (input: { n: number }) => input.n },
+      useCase: {
+        name: "n",
+        execute: async (input: { n: number }) => input.n,
+      },
     });
     await expect(
       useCase.execute({ n: 1, extra: true } as { n: number }),
@@ -33,8 +39,21 @@ describe("createValidatedUseCase", () => {
   it("skips the validator when no schema is given", async () => {
     const useCase = createValidatedUseCase({
       validator: createTypeBoxInputValidator(),
-      useCase: { execute: async () => "ok" },
+      useCase: { name: "ok", execute: async () => "ok" },
     });
     await expect(useCase.execute()).resolves.toBe("ok");
+    expect(useCase.name).toBe("ok");
+  });
+
+  it("preserves name when wrapping with a schema", async () => {
+    const useCase = createValidatedUseCase({
+      validator: createTypeBoxInputValidator(),
+      schema,
+      useCase: {
+        name: "n",
+        execute: async (input: { n: number }) => input.n,
+      },
+    });
+    expect(useCase.name).toBe("n");
   });
 });

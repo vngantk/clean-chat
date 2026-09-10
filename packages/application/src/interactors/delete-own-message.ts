@@ -1,5 +1,5 @@
 import { messageListChanged } from "@clean-chat/core";
-import type { DeleteOwnMessage } from "@clean-chat/core/use-cases";
+import { DeleteOwnMessageName, type DeleteOwnMessage } from "@clean-chat/core/use-cases";
 import { MESSAGE_DELETE_FORBIDDEN_ERROR } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
@@ -18,6 +18,7 @@ export function createDeleteOwnMessage(deps: {
   events: EventPublisher;
 }): DeleteOwnMessage {
   return {
+    name: DeleteOwnMessageName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const channelId = await deps.uow.run(async (tx) => {

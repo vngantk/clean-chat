@@ -1,5 +1,5 @@
 import { channelListChanged } from "@clean-chat/core";
-import type { CreateChannel } from "@clean-chat/core/use-cases";
+import { CreateChannelName, type CreateChannel } from "@clean-chat/core/use-cases";
 import {
   CHANNEL_NAME_LENGTH_ERROR,
   CHANNEL_NAME_MAX_LENGTH,
@@ -28,6 +28,7 @@ export function createCreateChannel(deps: {
   events: EventPublisher;
 }): CreateChannel {
   return {
+    name: CreateChannelName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const name = normalizeChannelName(input.name);

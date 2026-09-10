@@ -1,5 +1,5 @@
 import { presenceChanged } from "@clean-chat/core";
-import type { DisconnectPresence } from "@clean-chat/core/use-cases";
+import { DisconnectPresenceName, type DisconnectPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
@@ -25,6 +25,7 @@ export function createDisconnectPresence(deps: {
   events: EventPublisher;
 }): DisconnectPresence {
   return {
+    name: DisconnectPresenceName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const wasOnline = await deps.uow.run(async (tx) => {

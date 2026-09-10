@@ -1,4 +1,4 @@
-import type { SignUp } from "@clean-chat/core/use-cases";
+import { SignUpName, type SignUp } from "@clean-chat/core/use-cases";
 import { trimDisplayName } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 
@@ -11,6 +11,7 @@ export const DISPLAY_NAME_EMPTY_ERROR = "Display name cannot be empty.";
  */
 export function createSignUp(auth: AuthPort): SignUp {
   return {
+    name: SignUpName,
     execute(input) {
       const name = trimDisplayName(input.name);
       if (!name) {

@@ -1,4 +1,4 @@
-import type { SignIn } from "@clean-chat/core/use-cases";
+import { SignInName, type SignIn } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 
 /**
@@ -7,6 +7,7 @@ import type { AuthPort } from "../auth.js";
  */
 export function createSignIn(auth: AuthPort): SignIn {
   return {
+    name: SignInName,
     execute(input) {
       return auth.signIn(input.email, input.password);
     },

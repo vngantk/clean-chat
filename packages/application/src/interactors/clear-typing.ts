@@ -1,5 +1,5 @@
 import { typingChanged } from "@clean-chat/core";
-import type { ClearTyping } from "@clean-chat/core/use-cases";
+import { ClearTypingName, type ClearTyping } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { TypingRepository } from "../repositories/typing-repository.js";
@@ -17,6 +17,7 @@ export function createClearTyping(deps: {
   events: EventPublisher;
 }): ClearTyping {
   return {
+    name: ClearTypingName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       const removed = await deps.uow.run(async (tx) => {

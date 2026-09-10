@@ -1,7 +1,24 @@
-import type { Client } from "../client.js";
+import type { UseCase } from "@clean-chat/core/use-cases";
 import {
-  bearerAuthorizationHeader,
-} from "./bearer.js";
+  ClearTypingName,
+  CreateChannelName,
+  DeleteOwnMessageName,
+  DisconnectPresenceName,
+  EnsureGeneralChannelName,
+  GetCurrentUserName,
+  HeartbeatPresenceName,
+  ListChannelsName,
+  ListMessagesName,
+  ListPresenceName,
+  ListTypingName,
+  SendMessageName,
+  SignInName,
+  SignOutName,
+  SignUpName,
+  UpsertTypingName,
+} from "@clean-chat/core/use-cases";
+import type { Client } from "../client.js";
+import { bearerAuthorizationHeader } from "./bearer.js";
 import { createHttpEventSubscriber } from "./http-event-subscriber.js";
 import {
   createHttpUseCase,
@@ -48,72 +65,35 @@ export function createHttpClient(options: HttpClientOptions): Client {
     },
   };
 
-  const signOut = createHttpUseCase<void, void>(
-    useCaseUrl(baseUrl, "sign-out"),
-    httpOptions,
-  );
+  function httpUseCase<I, O, N extends string>(name: N): UseCase<I, O, N> {
+    return createHttpUseCase(name, useCaseUrl(baseUrl, name), httpOptions);
+  }
+
+  const signOut = httpUseCase<void, void, typeof SignOutName>(SignOutName);
 
   return {
-    signUp: createHttpUseCase(useCaseUrl(baseUrl, "sign-up"), httpOptions),
-    signIn: createHttpUseCase(useCaseUrl(baseUrl, "sign-in"), httpOptions),
+    signUp: httpUseCase(SignUpName),
+    signIn: httpUseCase(SignInName),
     signOut: {
+      name: SignOutName,
       async execute() {
         await signOut.execute();
         bearer = undefined;
       },
     },
-    getCurrentUser: createHttpUseCase(
-      useCaseUrl(baseUrl, "get-current-user"),
-      httpOptions,
-    ),
-    listChannels: createHttpUseCase(
-      useCaseUrl(baseUrl, "list-channels"),
-      httpOptions,
-    ),
-    ensureGeneralChannel: createHttpUseCase(
-      useCaseUrl(baseUrl, "ensure-general-channel"),
-      httpOptions,
-    ),
-    createChannel: createHttpUseCase(
-      useCaseUrl(baseUrl, "create-channel"),
-      httpOptions,
-    ),
-    listMessages: createHttpUseCase(
-      useCaseUrl(baseUrl, "list-messages"),
-      httpOptions,
-    ),
-    sendMessage: createHttpUseCase(
-      useCaseUrl(baseUrl, "send-message"),
-      httpOptions,
-    ),
-    deleteOwnMessage: createHttpUseCase(
-      useCaseUrl(baseUrl, "delete-own-message"),
-      httpOptions,
-    ),
-    listTyping: createHttpUseCase(
-      useCaseUrl(baseUrl, "list-typing"),
-      httpOptions,
-    ),
-    upsertTyping: createHttpUseCase(
-      useCaseUrl(baseUrl, "upsert-typing"),
-      httpOptions,
-    ),
-    clearTyping: createHttpUseCase(
-      useCaseUrl(baseUrl, "clear-typing"),
-      httpOptions,
-    ),
-    listPresence: createHttpUseCase(
-      useCaseUrl(baseUrl, "list-presence"),
-      httpOptions,
-    ),
-    heartbeatPresence: createHttpUseCase(
-      useCaseUrl(baseUrl, "heartbeat-presence"),
-      httpOptions,
-    ),
-    disconnectPresence: createHttpUseCase(
-      useCaseUrl(baseUrl, "disconnect-presence"),
-      httpOptions,
-    ),
+    getCurrentUser: httpUseCase(GetCurrentUserName),
+    listChannels: httpUseCase(ListChannelsName),
+    ensureGeneralChannel: httpUseCase(EnsureGeneralChannelName),
+    createChannel: httpUseCase(CreateChannelName),
+    listMessages: httpUseCase(ListMessagesName),
+    sendMessage: httpUseCase(SendMessageName),
+    deleteOwnMessage: httpUseCase(DeleteOwnMessageName),
+    listTyping: httpUseCase(ListTypingName),
+    upsertTyping: httpUseCase(UpsertTypingName),
+    clearTyping: httpUseCase(ClearTypingName),
+    listPresence: httpUseCase(ListPresenceName),
+    heartbeatPresence: httpUseCase(HeartbeatPresenceName),
+    disconnectPresence: httpUseCase(DisconnectPresenceName),
     eventSubscriber: createHttpEventSubscriber(`${baseUrl}/events`, {
       getHeaders: httpOptions.getHeaders,
     }),

@@ -21,7 +21,10 @@ export const SignUpInputSchema = Type.Object(
 
 export type SignUpInput = Static<typeof SignUpInputSchema>;
 
-export type SignUp = UseCase<SignUpInput, User>;
+/** HTTP / registry name for {@link SignUp}. */
+export const SignUpName = "sign-up" as const;
+
+export type SignUp = UseCase<SignUpInput, User, typeof SignUpName>;
 
 /**
  * Sign-in form body.
@@ -36,9 +39,15 @@ export const SignInInputSchema = Type.Object(
 
 export type SignInInput = Static<typeof SignInInputSchema>;
 
-export type SignIn = UseCase<SignInInput, User>;
+/** HTTP / registry name for {@link SignIn}. */
+export const SignInName = "sign-in" as const;
 
-export type SignOut = UseCase<void, void>;
+export type SignIn = UseCase<SignInInput, User, typeof SignInName>;
+
+/** HTTP / registry name for {@link SignOut}. */
+export const SignOutName = "sign-out" as const;
+
+export type SignOut = UseCase<void, void, typeof SignOutName>;
 
 /**
  * Session still resolving or signed out → `null`. Does not throw.
@@ -47,4 +56,7 @@ export const ViewerSchema = Type.Union([UserSchema, Type.Null()]);
 
 export type Viewer = Static<typeof ViewerSchema>;
 
-export type GetCurrentUser = UseCase<void, Viewer>;
+/** HTTP / registry name for {@link GetCurrentUser}. */
+export const GetCurrentUserName = "get-current-user" as const;
+
+export type GetCurrentUser = UseCase<void, Viewer, typeof GetCurrentUserName>;

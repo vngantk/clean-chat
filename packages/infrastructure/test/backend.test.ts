@@ -1,4 +1,5 @@
 import { createHttpClient } from "@clean-chat/client";
+import { SignUpName } from "@clean-chat/core/use-cases";
 import { afterEach, describe, expect, it } from "vitest";
 import { createBackend, type Backend } from "../src/backend.js";
 
@@ -93,7 +94,7 @@ describe("createBackend", () => {
       error: "Not authenticated",
     });
 
-    const signUp = await fetch(`${base}/use-cases/sign-up`, {
+    const signUp = await fetch(`${base}/use-cases/${SignUpName}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

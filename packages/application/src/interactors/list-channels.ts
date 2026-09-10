@@ -1,4 +1,4 @@
-import type { ListChannels } from "@clean-chat/core/use-cases";
+import { ListChannelsName, type ListChannels } from "@clean-chat/core/use-cases";
 import { compareChannels } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { ChannelRepository } from "../repositories/channel-repository.js";
@@ -14,6 +14,7 @@ export function createListChannels(deps: {
   channels: ChannelRepository;
 }): ListChannels {
   return {
+    name: ListChannelsName,
     async execute() {
       const user = await deps.auth.currentUser();
       if (user === null) {

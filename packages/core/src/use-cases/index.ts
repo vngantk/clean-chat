@@ -8,8 +8,12 @@ export type {
   Viewer,
 } from "./auth.js";
 export {
+  GetCurrentUserName,
   SignInInputSchema,
+  SignInName,
+  SignOutName,
   SignUpInputSchema,
+  SignUpName,
   ViewerSchema,
 } from "./auth.js";
 
@@ -24,7 +28,10 @@ export type {
 export {
   ChannelListSchema,
   CreateChannelInputSchema,
+  CreateChannelName,
   CreateChannelOutputSchema,
+  EnsureGeneralChannelName,
+  ListChannelsName,
 } from "./channels.js";
 
 export type {
@@ -38,9 +45,12 @@ export type {
 } from "./messages.js";
 export {
   DeleteOwnMessageInputSchema,
+  DeleteOwnMessageName,
   ListMessagesInputSchema,
+  ListMessagesName,
   MessageListSchema,
   SendMessageInputSchema,
+  SendMessageName,
 } from "./messages.js";
 
 export type {
@@ -54,8 +64,11 @@ export type {
 } from "./presence.js";
 export {
   DisconnectPresenceInputSchema,
+  DisconnectPresenceName,
   HeartbeatPresenceInputSchema,
+  HeartbeatPresenceName,
   ListPresenceInputSchema,
+  ListPresenceName,
   PresenceListSchema,
 } from "./presence.js";
 
@@ -66,6 +79,12 @@ export type {
   TypingList,
   UpsertTyping,
 } from "./typing.js";
-export { ChannelScopedInputSchema, TypingListSchema } from "./typing.js";
+export {
+  ChannelScopedInputSchema,
+  ClearTypingName,
+  ListTypingName,
+  TypingListSchema,
+  UpsertTypingName,
+} from "./typing.js";
 
 export type { UseCase } from "./use-case.js";

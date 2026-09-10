@@ -1,4 +1,4 @@
-import type { ListMessages } from "@clean-chat/core/use-cases";
+import { ListMessagesName, type ListMessages } from "@clean-chat/core/use-cases";
 import { MESSAGE_LIST_LIMIT } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { MessageRepository } from "../repositories/message-repository.js";
@@ -13,6 +13,7 @@ export function createListMessages(deps: {
   messages: MessageRepository;
 }): ListMessages {
   return {
+    name: ListMessagesName,
     async execute(input) {
       const user = await deps.auth.currentUser();
       if (user === null) {

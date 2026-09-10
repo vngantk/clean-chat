@@ -1,4 +1,4 @@
-import type { SignOut } from "@clean-chat/core/use-cases";
+import { SignOutName, type SignOut } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 
 /**
@@ -6,6 +6,7 @@ import type { AuthPort } from "../auth.js";
  */
 export function createSignOut(auth: AuthPort): SignOut {
   return {
+    name: SignOutName,
     execute() {
       return auth.signOut();
     },

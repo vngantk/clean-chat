@@ -1,5 +1,5 @@
 import { channelListChanged } from "@clean-chat/core";
-import type { EnsureGeneralChannel } from "@clean-chat/core/use-cases";
+import { EnsureGeneralChannelName, type EnsureGeneralChannel } from "@clean-chat/core/use-cases";
 import { GENERAL_CHANNEL_NAME } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
@@ -20,6 +20,7 @@ export function createEnsureGeneralChannel(deps: {
   events: EventPublisher;
 }): EnsureGeneralChannel {
   return {
+    name: EnsureGeneralChannelName,
     async execute() {
       const user = await requireUser(deps.auth);
       const { id, inserted } = await deps.uow.run(async (tx) => {

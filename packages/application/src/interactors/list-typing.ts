@@ -1,4 +1,4 @@
-import type { ListTyping } from "@clean-chat/core/use-cases";
+import { ListTypingName, type ListTyping } from "@clean-chat/core/use-cases";
 import { TYPING_EXPIRE_MS } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
@@ -16,6 +16,7 @@ export function createListTyping(deps: {
   clock: Clock;
 }): ListTyping {
   return {
+    name: ListTypingName,
     async execute(input) {
       const user = await deps.auth.currentUser();
       if (user === null) {

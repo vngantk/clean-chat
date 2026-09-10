@@ -1,4 +1,4 @@
-import type { ListPresence } from "@clean-chat/core/use-cases";
+import { ListPresenceName, type ListPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
 import type { UnitOfWork } from "../transaction.js";
@@ -13,6 +13,7 @@ export function createListPresence(deps: {
   presence: PresenceRepository;
 }): ListPresence {
   return {
+    name: ListPresenceName,
     async execute(input) {
       const user = await deps.auth.currentUser();
       if (user === null) {

@@ -24,7 +24,13 @@ export type MessageList = Static<typeof MessageListSchema>;
  * Latest 50 messages in the channel, oldest first, with `authorName`.
  * Signed out → `[]`.
  */
-export type ListMessages = UseCase<ListMessagesInput, Message[]>;
+export const ListMessagesName = "list-messages" as const;
+
+export type ListMessages = UseCase<
+  ListMessagesInput,
+  Message[],
+  typeof ListMessagesName
+>;
 
 /**
  * Raw composer body. Trim then validate as a message body.
@@ -42,7 +48,9 @@ export type SendMessageInput = Static<typeof SendMessageInputSchema>;
 /**
  * Auth required. Publishes `message-list-changed`.
  */
-export type SendMessage = UseCase<SendMessageInput, void>;
+export const SendMessageName = "send-message" as const;
+
+export type SendMessage = UseCase<SendMessageInput, void, typeof SendMessageName>;
 
 export const DeleteOwnMessageInputSchema = Type.Object(
   {
@@ -57,4 +65,10 @@ export type DeleteOwnMessageInput = Static<typeof DeleteOwnMessageInputSchema>;
  * Auth required. Missing message is a no-op. Wrong author throws.
  * Publishes `message-list-changed` when a row is deleted.
  */
-export type DeleteOwnMessage = UseCase<DeleteOwnMessageInput, void>;
+export const DeleteOwnMessageName = "delete-own-message" as const;
+
+export type DeleteOwnMessage = UseCase<
+  DeleteOwnMessageInput,
+  void,
+  typeof DeleteOwnMessageName
+>;

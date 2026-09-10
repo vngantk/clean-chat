@@ -1,5 +1,5 @@
 import { typingChanged } from "@clean-chat/core";
-import type { UpsertTyping } from "@clean-chat/core/use-cases";
+import { UpsertTypingName, type UpsertTyping } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
 import type { EventPublisher } from "../event-publisher.js";
@@ -19,6 +19,7 @@ export function createUpsertTyping(deps: {
   events: EventPublisher;
 }): UpsertTyping {
   return {
+    name: UpsertTypingName,
     async execute(input) {
       const user = await requireUser(deps.auth);
       await deps.uow.run((tx) =>
