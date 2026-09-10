@@ -1,18 +1,34 @@
 #!/usr/bin/env node
 
 import { createServer } from "./server.js";
+import { createSqlPersistence } from "./sql/index.js";
 import type { CorsOrigins } from "./http/express-server.js";
+
+const DEFAULT_SQLITE_URL = "file:./clean-chat.db";
 
 const port = parsePort(process.env["PORT"]);
 const host = process.env["HOST"] ?? "127.0.0.1";
 const corsOrigins = parseCorsOrigins(process.env["CORS_ORIGIN"]);
-const server = createServer({ port, host, corsOrigins });
+const sqliteUrl =
+  process.env["SQLITE_URL"] === undefined || process.env["SQLITE_URL"] === ""
+    ? DEFAULT_SQLITE_URL
+    : process.env["SQLITE_URL"];
+const persistence = await createSqlPersistence({ url: sqliteUrl });
+const server = createServer({
+  port,
+  host,
+  corsOrigins,
+  persistence,
+});
 
 await server.start();
-console.log(`Clean Chat listening on http://${host}:${String(port)}`);
+console.log(
+  `Clean Chat listening on http://${host}:${String(port)} (${sqliteUrl})`,
+);
 
 async function shutdown(): Promise<void> {
   await server.stop();
+  persistence.close();
   process.exit(0);
 }
 

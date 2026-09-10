@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, interactors, in-memory adapters, Express HTTP, a composition root (`createServer`), and a Vite + React SPA compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+Domain entities, use-case Input/Output, interactors, in-memory and SQLite persistence, Express HTTP, a composition root (`createServer`), and a Vite + React SPA compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 
 ## Layout
 
@@ -36,6 +36,8 @@ That starts:
 
 CORS allows any browser origin on loopback (`CORS_ORIGIN=*`); set `CORS_ORIGIN` to a comma-separated allowlist to restrict it, and you must set an allowlist if `HOST` is not loopback.
 
+`npm start` / `npm run dev` use SQLite at `file:./clean-chat.db`. Override with `SQLITE_URL`. Tests still call `createServer()` with in-memory persistence unless they pass `createSqlPersistence()`.
+
 Open two browser windows, sign up as two users, and watch messages, typing, and who’s-online update without refresh.
 
 API-only (no UI): `npm start`. Use cases are `POST /use-cases/{name}`; events are `GET /events` (SSE, all types, bearer required).
@@ -45,7 +47,7 @@ API-only (no UI): `npm start`. Use cases are `POST /use-cases/{name}`; events ar
 - `npm run dev` — Express + Vite frontend together
 - `npm run dev:frontend` / `npm run dev:server` — each process on its own (`npm run dev:types` if you want `tsc -b` watching)
 - `npm run typecheck` — `tsc -b` across core/application/infrastructure/client, plus the web app
-- `npm test` — Vitest (interactors + in-memory persistence + Express HTTP + HTTP client)
+- `npm test` — Vitest (interactors + in-memory and SQLite persistence + Express HTTP + HTTP client)
 - `npm run test:coverage` — same tests with a text, HTML, and LCOV coverage report in `coverage/`
 - `npm run build` — emit `packages/{core,application,infrastructure,client}/dist`
 - `npm run lint` — oxlint

@@ -20,7 +20,15 @@ import {
   useCaseInputSchemas,
   type InputValidator,
 } from "@clean-chat/application";
+import type {
+  ChannelRepository,
+  MessageRepository,
+  PresenceRepository,
+  TypingRepository,
+  UnitOfWork,
+} from "@clean-chat/application";
 import type { AppEvent } from "@clean-chat/core";
+import type { AuthUserStore } from "./auth-user-store.js";
 import { createInMemoryAuth } from "./memory/auth.js";
 import { createSystemClock } from "./memory/clock.js";
 import { createInMemoryEventBus } from "./memory/event-bus.js";
@@ -50,6 +58,15 @@ const APP_EVENT_TYPES: AppEvent["type"][] = [
   "presence-changed",
 ];
 
+export type PersistencePorts = {
+  readonly uow: UnitOfWork;
+  readonly channels: ChannelRepository;
+  readonly messages: MessageRepository;
+  readonly typing: TypingRepository;
+  readonly presence: PresenceRepository;
+  readonly authUsers: AuthUserStore;
+};
+
 export type ServerOptions = {
   port?: number;
   host?: string;
@@ -62,6 +79,8 @@ export type ServerOptions = {
   sseMaxConnectionsPerToken?: number;
   /** `express.json` limit. Default `16kb`. */
   jsonBodyLimit?: string;
+  /** Defaults to in-memory. Pass `createSqlPersistence()` for SQLite. */
+  persistence?: PersistencePorts;
 };
 
 /**
@@ -69,11 +88,11 @@ export type ServerOptions = {
  * Default bind is `127.0.0.1:3000`. Use `port: 0` in tests.
  */
 export function createServer(options: ServerOptions = {}): Lifecycle & { readonly port: number; readonly host: string; }{
-  const persistence = createInMemoryPersistence();
+  const persistence = options.persistence ?? createInMemoryPersistence();
   const ids = createRandomIdGenerator();
   const clock = createSystemClock();
   const events = createInMemoryEventBus();
-  const auth = createInMemoryAuth({ store: persistence.store, ids });
+  const auth = createInMemoryAuth({ users: persistence.authUsers, ids });
   const { uow, channels, messages, typing, presence } = persistence;
   const validator = options.validator ?? createTypeBoxInputValidator();
 

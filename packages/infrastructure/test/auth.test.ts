@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createInMemoryAuth,
+  createMemoryAuthUsers,
   EMAIL_TAKEN_ERROR,
   INVALID_CREDENTIALS_ERROR,
 } from "../src/memory/auth.js";
@@ -18,7 +19,10 @@ const password = "password1";
 function authWithStore() {
   const store = createInMemoryStore();
   const ids = createRandomIdGenerator();
-  const auth = createInMemoryAuth({ store, ids });
+  const auth = createInMemoryAuth({
+    users: createMemoryAuthUsers(store),
+    ids,
+  });
   return { store, ids, auth };
 }
 

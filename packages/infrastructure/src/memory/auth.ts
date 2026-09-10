@@ -1,6 +1,7 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import type { AuthPort, IdGenerator } from "@clean-chat/application";
 import type { User } from "@clean-chat/core/domain";
+import type { AuthUserStore } from "../auth-user-store.js";
 import {
   getRequestToken,
   hasSessionContext,
@@ -24,29 +25,43 @@ export const EMAIL_TAKEN_ERROR = "An account with that email already exists.";
 /** Thrown when sign-in email or password does not match. */
 export const INVALID_CREDENTIALS_ERROR = "Invalid email or password.";
 
+/** Map-backed {@link AuthUserStore} sharing {@link InMemoryStore.users}. */
+export function createMemoryAuthUsers(store: InMemoryStore): AuthUserStore {
+  return {
+    async getById(id) {
+      const user = store.users.get(id);
+      return user ? { ...user } : null;
+    },
+
+    async findByEmail(email) {
+      for (const user of store.users.values()) {
+        if (user.email === email) {
+          return { ...user };
+        }
+      }
+      return null;
+    },
+
+    async put(user) {
+      store.users.set(user.id, { ...user });
+    },
+  };
+}
+
 /**
  * In-process auth: scrypt password hashes, bearer session tokens, users
- * written to {@link InMemoryStore.users} so message joins see display names.
+ * written to {@link AuthUserStore} so message joins see display names.
  *
  * HTTP binds the token via AsyncLocalStorage (`Authorization: Bearer`).
  * Outside a request (tests), {@link currentUser} uses the last issued token.
  */
 export function createInMemoryAuth(deps: {
-  store: InMemoryStore;
+  users: AuthUserStore;
   ids: IdGenerator;
 }): AuthPort {
   const hashes = new Map<string, string>();
   const sessions = new Map<string, string>();
   let lastToken: string | null = null;
-
-  function userByEmail(email: string): User | undefined {
-    for (const user of deps.store.users.values()) {
-      if (user.email === email) {
-        return user;
-      }
-    }
-    return undefined;
-  }
 
   function copyUser(user: User): User {
     return { ...user };
@@ -69,7 +84,7 @@ export function createInMemoryAuth(deps: {
 
   return {
     async signUp(email, password, name) {
-      if (userByEmail(email)) {
+      if (await deps.users.findByEmail(email)) {
         throw new Error(EMAIL_TAKEN_ERROR);
       }
       const user: User = {
@@ -78,13 +93,13 @@ export function createInMemoryAuth(deps: {
         name,
       };
       hashes.set(user.id, await hashPassword(password));
-      deps.store.users.set(user.id, copyUser(user));
+      await deps.users.put(copyUser(user));
       issueToken(user.id);
       return copyUser(user);
     },
 
     async signIn(email, password) {
-      const user = userByEmail(email);
+      const user = await deps.users.findByEmail(email);
       const stored = user ? hashes.get(user.id) : undefined;
       if (!user || stored === undefined) {
         throw new Error(INVALID_CREDENTIALS_ERROR);
@@ -115,7 +130,7 @@ export function createInMemoryAuth(deps: {
       if (userId === undefined) {
         return null;
       }
-      const user = deps.store.users.get(userId);
+      const user = await deps.users.getById(userId);
       return user ? copyUser(user) : null;
     },
   };

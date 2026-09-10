@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. The SPA is Vite + React in `@clean-chat/web` (Tailwind 4, shadcn/ui `base-nova`, same look as convex-chat).
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence adapters are **in-memory** (`src/memory/`) and **SQLite** (`src/sql/`, libSQL). HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. The SPA is Vite + React in `@clean-chat/web` (Tailwind 4, shadcn/ui `base-nova`, same look as convex-chat).
 
 ## Why these layers
 
@@ -12,7 +12,7 @@ Uncle Bob’s circles, named to match how we will build:
 | --- | --- | --- |
 | Core | `@clean-chat/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`) |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createServer` |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory and SQLite persistence, in-memory auth/events, Express HTTP, `createServer` |
 | Driving adapters | `@clean-chat/client` | HTTP `createHttpClient` (typed use cases + `eventSubscriber` via `fetch`) |
 | Driving UI | `@clean-chat/web` | Vite + React SPA (Tailwind, shadcn). Must not import application or infrastructure |
 
@@ -68,11 +68,11 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 
 `EventPublisher` (application) and `EventSubscriber` (core) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
 
-Interactors implement every `UseCase` in `@clean-chat/core/use-cases`. Persistence is in-memory (`packages/infrastructure/src/memory/`).
+Interactors implement every `UseCase` in `@clean-chat/core/use-cases`. Persistence adapters live in `@clean-chat/infrastructure` (`src/memory/` and `src/sql/`). `createServer()` defaults to in-memory (tests). `src/main.ts` uses SQLite (`file:./clean-chat.db`, override with `SQLITE_URL`).
 
 ## Outbound ports
 
-Interfaces live under `packages/application/src/` (repositories in `src/repositories/`). The frontend never imports these. Infrastructure currently implements them in memory.
+Interfaces live under `packages/application/src/` (repositories in `src/repositories/`). The frontend never imports these. Infrastructure implements them in memory and in SQLite.
 
 **Transaction:** one `execute()` is one transaction. `UnitOfWork.run` supplies an opaque `TransactionContext`. Every persistence method takes `tx` first. Use cases only forward it. Do not nest use cases.
 
@@ -126,6 +126,7 @@ execute
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, `createInMemoryEventBus`, `createInMemoryAuth`, `createSystemClock`, `createRandomIdGenerator` |
+| `packages/infrastructure/src/sql/` | SQLite `UnitOfWork` and repositories (`createSqlPersistence`, libSQL) |
 | `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
 | `packages/client/src/http/` | `createHttpClient`, `createHttpUseCase`, `createHttpEventSubscriber` (isomorphic `fetch`) |
 | `packages/client/src/index.ts` | Driving `Client` type + HTTP transport |
