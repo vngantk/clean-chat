@@ -89,6 +89,9 @@ describe("createInMemoryAuth", () => {
     await runWithSessionContext(grace.token, async () => {
       await expect(auth.currentUser()).resolves.toEqual(grace.user);
     });
+    await runWithSessionContext(null, async () => {
+      await expect(auth.currentUser()).resolves.toBeNull();
+    });
   });
 
   it("sign-out clears the session but keeps the account", async () => {

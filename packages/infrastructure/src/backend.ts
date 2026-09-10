@@ -26,7 +26,11 @@ import { createSystemClock } from "./memory/clock.js";
 import { createInMemoryEventBus } from "./memory/event-bus.js";
 import { createRandomIdGenerator } from "./memory/id-generator.js";
 import { createInMemoryPersistence } from "./memory/index.js";
-import { createExpressEventSubscriptionRouter } from "./http/express-event-subscription-router.js";
+import { getRequestToken } from "./memory/session-context.js";
+import {
+  createExpressEventSubscriptionRouter,
+  DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
+} from "./http/express-event-subscription-router.js";
 import { createBearerSessionMiddleware } from "./http/bearer-session-middleware.js";
 import {
   createExpressServer,
@@ -37,6 +41,7 @@ import {
   createExpressUseCaseRouter,
   type HttpUseCase,
 } from "./http/express-use-case-router.js";
+import type { AuthRateLimitOptions } from "./http/auth-rate-limit.js";
 
 const APP_EVENT_TYPES: AppEvent["type"][] = [
   "channel-list-changed",
@@ -51,6 +56,12 @@ export type BackendOptions = {
   corsOrigins?: CorsOrigins;
   /** Defaults to {@link createTypeBoxInputValidator}. */
   validator?: InputValidator;
+  /** `sign-in` / `sign-up` limiter. */
+  authRateLimit?: AuthRateLimitOptions;
+  /** Concurrent SSE streams per bearer token. Default 8. */
+  sseMaxConnectionsPerToken?: number;
+  /** `express.json` limit. Default `16kb`. */
+  jsonBodyLimit?: string;
 };
 
 /**
@@ -127,6 +138,7 @@ export function createBackend(options: BackendOptions = {}): Backend {
       events,
     }),
     "disconnect-presence": createDisconnectPresence({
+      auth,
       uow,
       presence,
       events,
@@ -135,8 +147,25 @@ export function createBackend(options: BackendOptions = {}): Backend {
 
   const server = createExpressServer({
     routers: {
-      "/use-cases": createExpressUseCaseRouter(useCases),
-      "/events": createExpressEventSubscriptionRouter(APP_EVENT_TYPES, events),
+      "/use-cases": createExpressUseCaseRouter(useCases, {
+        ...(options.jsonBodyLimit === undefined
+          ? {}
+          : { jsonBodyLimit: options.jsonBodyLimit }),
+        ...(options.authRateLimit === undefined
+          ? {}
+          : { authRateLimit: options.authRateLimit }),
+      }),
+      "/events": createExpressEventSubscriptionRouter(
+        APP_EVENT_TYPES,
+        events,
+        {
+          authorize: async () => (await auth.currentUser()) !== null,
+          connectionKey: () => getRequestToken(),
+          maxConnectionsPerKey:
+            options.sseMaxConnectionsPerToken ??
+            DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
+        },
+      ),
     },
     port: options.port ?? 3000,
     host: options.host ?? "127.0.0.1",

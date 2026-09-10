@@ -5,11 +5,13 @@ import express, {
   type RequestHandler,
   type Router,
 } from "express";
+import { httpErrorHandler } from "./http-error-handler.js";
 import type { Lifecycle } from "./lifecycle.js";
 
 /**
- * Browser origins allowed to call this server. `"*"` (the default) allows
- * any `Origin`. An empty list disables CORS headers (same-origin only).
+ * Browser origins allowed to call this server. `"*"` (the default on
+ * loopback) allows any `Origin`. An empty list disables CORS headers
+ * (same-origin only). Off-loopback binds require an explicit allowlist.
  */
 export type CorsOrigins = "*" | readonly string[];
 
@@ -18,9 +20,10 @@ export type ExpressServerDeps = {
   port: number;
   host?: string;
   /**
-   * CORS allowlist. Default `"*"`. Restrict to the UI origin(s) when they
-   * are known. Cookie credentials are not used; the UI sends
-   * `Authorization: Bearer`.
+   * CORS allowlist. Default `"*"` on loopback. Restrict to the UI
+   * origin(s) when they are known. Cookie credentials are not used; the
+   * UI sends `Authorization: Bearer`. Binding off loopback with `"*"`
+   * throws.
    */
   corsOrigins?: CorsOrigins;
   /** Ran after CORS and before routers (e.g. bearer session context). */
@@ -45,13 +48,22 @@ export type ExpressServer = Lifecycle & {
 };
 
 /**
- * Builds an Express app, applies CORS, mounts each router at its map key
- * (`app.use(path, router)`), and listens on `port` / `host` in
- * {@link Lifecycle.start}.
+ * Builds an Express app, applies security headers and CORS, mounts each
+ * router at its map key (`app.use(path, router)`), and listens on `port`
+ * / `host` in {@link Lifecycle.start}.
  */
 export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   const host = deps.host ?? "127.0.0.1";
+  assertCorsForHost(host, deps.corsOrigins);
   const app = express();
+  app.disable("x-powered-by");
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("X-DNS-Prefetch-Control", "off");
+    next();
+  });
   app.use(
     cors({
       origin: corsOrigin(deps.corsOrigins),
@@ -68,6 +80,7 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   for (const [path, router] of Object.entries(deps.routers)) {
     app.use(path === "" ? "/" : path, router);
   }
+  app.use(httpErrorHandler);
   let httpServer: Server | undefined;
 
   function requireListening(): Server {
@@ -139,6 +152,24 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
       return httpServer;
     },
   };
+}
+
+function isLoopbackHost(host: string): boolean {
+  return host === "127.0.0.1" || host === "::1" || host === "localhost";
+}
+
+function assertCorsForHost(
+  host: string,
+  origins: CorsOrigins | undefined,
+): void {
+  if (isLoopbackHost(host)) {
+    return;
+  }
+  if (origins === undefined || origins === "*") {
+    throw new Error(
+      "CORS_ORIGIN must be an explicit allowlist when binding off loopback",
+    );
+  }
 }
 
 function corsOrigin(

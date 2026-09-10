@@ -30,7 +30,7 @@ npm test
 npm start
 ```
 
-`npm start` builds and listens on `http://127.0.0.1:3000` (`PORT` / `HOST` override). CORS allows any browser origin by default (`CORS_ORIGIN=*`); set `CORS_ORIGIN` to a comma-separated allowlist to restrict it. Use cases are `POST /use-cases/{name}`; events are `GET /events/{type}` (SSE).
+`npm start` builds and listens on `http://127.0.0.1:3000` (`PORT` / `HOST` override). CORS allows any browser origin on loopback (`CORS_ORIGIN=*`); set `CORS_ORIGIN` to a comma-separated allowlist to restrict it, and you must set an allowlist if `HOST` is not loopback. Use cases are `POST /use-cases/{name}`; events are `GET /events/{type}` (SSE, bearer required).
 
 ## Scripts
 

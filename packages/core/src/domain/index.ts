@@ -67,6 +67,7 @@ export {
   PasswordSchema,
   DisplayNameSchema,
   PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
   trimDisplayName,
   type User,
   type UserId,

@@ -8,7 +8,7 @@
  * are {@link createInMemoryEventBus} (`EventPublisher` + `EventSubscriber`).
  * The isomorphic HTTP driving adapter is `@clean-chat/client`
  * (`createHttpClient`). In-memory {@link createInMemoryAuth}
- * (scrypt hashes, one process session), {@link createSystemClock}, and
+ * (scrypt hashes, bearer tokens per request), {@link createSystemClock}, and
  * {@link createRandomIdGenerator} are here. {@link createBackend} is the
  * composition root. This
  * package may import the inner layers and implement their ports. Inner

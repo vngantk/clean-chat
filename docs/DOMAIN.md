@@ -2,7 +2,7 @@
 
 How `@clean-chat/core/domain` models [PRODUCT.md](./PRODUCT.md). The source of truth is the TypeBox schemas in `packages/core/src/domain/`. This document explains the convention and each type.
 
-There are no classes. Runtime validation (`Value.Check`) is not wired yet; the schemas are the contract use cases will check against.
+There are no classes. Runtime validation is a pluggable `InputValidator` at the composition root (default TypeBox `Value.Check`).
 
 ## Schema-first convention
 
@@ -83,7 +83,7 @@ Related value objects (same file, not fields of `User`):
 
 | Schema | Rule | Notes |
 | --- | --- | --- |
-| `PasswordSchema` | `minLength: 8` (`PASSWORD_MIN_LENGTH`) | Plaintext only. Hashing is infrastructure. |
+| `PasswordSchema` | `minLength: 8` (`PASSWORD_MIN_LENGTH`), `maxLength: 128` (`PASSWORD_MAX_LENGTH`) | Plaintext only. Hashing is infrastructure. |
 | `DisplayNameSchema` | `minLength: 1` | After `trimDisplayName` |
 
 ## Channel

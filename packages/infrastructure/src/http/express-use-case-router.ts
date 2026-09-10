@@ -1,6 +1,12 @@
 import express, { type Router } from "express";
 import { getIssuedToken } from "../memory/session-context.js";
+import {
+  createAuthRateLimiter,
+  type AuthRateLimitOptions,
+} from "./auth-rate-limit.js";
 import { bearerAuthorizationHeader } from "./bearer.js";
+import { httpErrorHandler } from "./http-error-handler.js";
+import { JSON_BODY_LIMIT } from "./http-errors.js";
 
 /**
  * A use case invokable from HTTP. Input is typed as `never` so a map can hold
@@ -9,6 +15,13 @@ import { bearerAuthorizationHeader } from "./bearer.js";
  */
 export type HttpUseCase = {
   execute(input: never): Promise<unknown>;
+};
+
+export type ExpressUseCaseRouterOptions = {
+  /** Passed to `express.json`. Default {@link JSON_BODY_LIMIT}. */
+  jsonBodyLimit?: string;
+  /** Applied only to `sign-in` and `sign-up`. */
+  authRateLimit?: AuthRateLimitOptions;
 };
 
 /**
@@ -20,28 +33,36 @@ export type HttpUseCase = {
  */
 export function createExpressUseCaseRouter(
   useCases: Record<string, HttpUseCase>,
+  options?: ExpressUseCaseRouterOptions,
 ): Router {
   const router = express.Router();
-  router.use(express.json());
+  router.use(express.json({ limit: options?.jsonBodyLimit ?? JSON_BODY_LIMIT }));
+  const authLimiter = createAuthRateLimiter(options?.authRateLimit);
 
   for (const [name, useCase] of Object.entries(useCases)) {
-    router.post(`/${name}`, async (req, res, next) => {
-      try {
-        const output = await useCase.execute(req.body as never);
-        const issued = getIssuedToken();
-        if (issued !== null) {
-          res.setHeader("Authorization", bearerAuthorizationHeader(issued));
+    const rateLimited = name === "sign-in" || name === "sign-up";
+    router.post(
+      `/${name}`,
+      ...(rateLimited ? [authLimiter] : []),
+      async (req, res, next) => {
+        try {
+          const output = await useCase.execute(req.body as never);
+          const issued = getIssuedToken();
+          if (issued !== null) {
+            res.setHeader("Authorization", bearerAuthorizationHeader(issued));
+          }
+          if (output === undefined) {
+            res.status(204).end();
+            return;
+          }
+          res.json(output);
+        } catch (err) {
+          next(err);
         }
-        if (output === undefined) {
-          res.status(204).end();
-          return;
-        }
-        res.json(output);
-      } catch (err) {
-        next(err);
-      }
-    });
+      },
+    );
   }
 
+  router.use(httpErrorHandler);
   return router;
 }

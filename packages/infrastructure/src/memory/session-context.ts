@@ -23,6 +23,11 @@ export function getRequestToken(): string | null {
   return als.getStore()?.requestToken ?? null;
 }
 
+/** True inside {@link runWithSessionContext} (HTTP request), even with no token. */
+export function hasSessionContext(): boolean {
+  return als.getStore() !== undefined;
+}
+
 /**
  * Token created by sign-in / sign-up in this context. Also becomes the
  * request token so `currentUser` in the same turn sees the new session.

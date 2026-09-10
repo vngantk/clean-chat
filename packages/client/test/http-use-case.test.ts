@@ -66,7 +66,7 @@ describe("createHttpUseCase", () => {
     });
 
     const fail = createHttpUseCase<void, void>(`${base}/fail`);
-    await expect(fail.execute()).rejects.toThrow(/HTTP 500/);
+    await expect(fail.execute()).rejects.toThrow("Internal server error");
   });
 
   it("uses the mount prefix in the URL", async () => {

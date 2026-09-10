@@ -158,6 +158,9 @@ describe("createExpressServer", () => {
     const get = await fetch(url, { headers: { Origin: origin } });
     expect(get.status).toBe(204);
     expect(get.headers.get("access-control-allow-origin")).toBe("*");
+    expect(get.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(get.headers.get("x-frame-options")).toBe("DENY");
+    expect(get.headers.get("x-powered-by")).toBeNull();
   });
 
   it("reflects only allowlisted origins", async () => {
@@ -192,5 +195,24 @@ describe("createExpressServer", () => {
     });
     expect(res.status).toBe(204);
     expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("rejects * CORS when binding off loopback", () => {
+    expect(() =>
+      createExpressServer({
+        routers: {},
+        port: 0,
+        host: "0.0.0.0",
+      }),
+    ).toThrow(/explicit allowlist/);
+
+    expect(() =>
+      createExpressServer({
+        routers: {},
+        port: 0,
+        host: "0.0.0.0",
+        corsOrigins: ["http://ui.example"],
+      }),
+    ).not.toThrow();
   });
 });

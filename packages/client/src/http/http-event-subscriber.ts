@@ -1,4 +1,5 @@
 import type { AppEvent, EventSubscriber } from "@clean-chat/core";
+import { readHttpErrorMessage } from "./http-error.js";
 
 function isAbortError(err: unknown): boolean {
   return err instanceof Error && err.name === "AbortError";
@@ -32,10 +33,10 @@ async function readSse(
 ): Promise<void> {
   const res = await fetch(url, {
     signal,
-    headers: getHeaders?.(),
+    headers: getHeaders?.() ?? {},
   });
   if (!res.ok) {
-    throw new Error(`HTTP ${String(res.status)}`);
+    throw new Error(await readHttpErrorMessage(res));
   }
   if (!res.body) {
     throw new Error("SSE response has no body");

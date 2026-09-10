@@ -3,6 +3,7 @@ import express from "express";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   createExpressUseCaseRouter,
+  type ExpressUseCaseRouterOptions,
   type HttpUseCase,
 } from "../src/http/index.js";
 
@@ -51,9 +52,10 @@ describe("createExpressUseCaseRouter", () => {
   async function mount(
     useCases: Record<string, HttpUseCase>,
     mountPath?: string,
+    routerOptions?: ExpressUseCaseRouterOptions,
   ) {
     const app = express();
-    const router = createExpressUseCaseRouter(useCases);
+    const router = createExpressUseCaseRouter(useCases, routerOptions);
     if (mountPath !== undefined) {
       app.use(mountPath, router);
     } else {
@@ -95,7 +97,7 @@ describe("createExpressUseCaseRouter", () => {
     expect(await res.text()).toBe("");
   });
 
-  it("responds 500 when the use case throws", async () => {
+  it("responds 500 with a generic body when the use case throws", async () => {
     const origin = await mount({
       fail: asUseCase(async () => {
         throw new Error("nope");
@@ -103,8 +105,52 @@ describe("createExpressUseCaseRouter", () => {
     });
 
     const res = await fetch(`${origin}/fail`, { method: "POST" });
-
     expect(res.status).toBe(500);
+    await expect(res.json()).resolves.toEqual({
+      error: "Internal server error",
+    });
+  });
+
+  it("maps known domain errors to 400 and keeps the message", async () => {
+    const origin = await mount({
+      fail: asUseCase(async () => {
+        throw new Error("Invalid input");
+      }),
+    });
+
+    const res = await fetch(`${origin}/fail`, { method: "POST" });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({ error: "Invalid input" });
+  });
+
+  it("responds 400 for invalid JSON", async () => {
+    const origin = await mount({
+      echo: asUseCase(async (input) => input),
+    });
+
+    const res = await fetch(`${origin}/echo`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{",
+    });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({ error: "Invalid JSON" });
+  });
+
+  it("responds 413 when the JSON body exceeds the limit", async () => {
+    const origin = await mount(
+      { echo: asUseCase(async (input) => input) },
+      undefined,
+      { jsonBodyLimit: "50b" },
+    );
+
+    const res = await fetch(`${origin}/echo`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ n: "x".repeat(200) }),
+    });
+    expect(res.status).toBe(413);
+    await expect(res.json()).resolves.toEqual({ error: "Payload too large" });
   });
 
   it("responds 404 for an unknown path or GET", async () => {

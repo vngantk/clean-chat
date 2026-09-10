@@ -23,13 +23,17 @@ export type Email = Static<typeof EmailSchema>;
 /** Minimum length of a password at sign-up and sign-in. */
 export const PASSWORD_MIN_LENGTH = 8;
 
+/** Maximum length of a password so a huge payload cannot stall hashing. */
+export const PASSWORD_MAX_LENGTH = 128;
+
 /**
  * Plaintext password. Hashing belongs in infrastructure; this schema only
- * encodes the product rule (at least 8 characters).
+ * encodes the product rule (8–128 characters).
  */
 export const PasswordSchema = Type.String({
   minLength: PASSWORD_MIN_LENGTH,
-  description: "Plaintext password (min 8 characters)",
+  maxLength: PASSWORD_MAX_LENGTH,
+  description: "Plaintext password (8–128 characters)",
 });
 
 export type Password = Static<typeof PasswordSchema>;

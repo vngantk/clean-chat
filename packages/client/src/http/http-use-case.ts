@@ -1,5 +1,6 @@
 import type { UseCase } from "@clean-chat/core/use-cases";
 import { parseBearerAuthorization } from "./bearer.js";
+import { readHttpErrorMessage } from "./http-error.js";
 
 export type HttpUseCaseOptions = {
   /** Extra request headers (e.g. `Authorization`). */
@@ -11,8 +12,9 @@ export type HttpUseCaseOptions = {
 /**
  * Driving adapter: `POST` JSON `Input` to `url`, return JSON `Output`.
  * Uses platform `fetch` (Node 20+ and browsers). Server `void` Output is
- * **204**; this adapter yields `undefined`. Non-OK responses throw (Express
- * default 500 is not a domain error body).
+ * **204**; this adapter yields `undefined`. Non-OK responses throw with
+ * the server `{ error }` string (or `HTTP {status}` if the body is not
+ * that shape).
  */
 export function createHttpUseCase<Input, Output>(
   url: string,
@@ -37,7 +39,7 @@ export function createHttpUseCase<Input, Output>(
         return undefined as Output;
       }
       if (!res.ok) {
-        throw new Error(`HTTP ${String(res.status)}`);
+        throw new Error(await readHttpErrorMessage(res));
       }
       return (await res.json()) as Output;
     },

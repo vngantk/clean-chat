@@ -3,12 +3,20 @@ import type { AuthPort, IdGenerator } from "@clean-chat/application";
 import type { User } from "@clean-chat/core/domain";
 import {
   getRequestToken,
+  hasSessionContext,
   setIssuedToken,
 } from "./session-context.js";
 import type { InMemoryStore } from "./store.js";
 
 const HASH_LENGTH = 32;
 const TOKEN_BYTES = 32;
+/** Node defaults, set explicitly so cost does not drift with the runtime. */
+const SCRYPT = {
+  N: 16384,
+  r: 8,
+  p: 1,
+  maxmem: 32 * 1024 * 1024,
+} as const;
 
 /** Thrown when sign-up uses an email that already has an account. */
 export const EMAIL_TAKEN_ERROR = "An account with that email already exists.";
@@ -53,7 +61,10 @@ export function createInMemoryAuth(deps: {
   }
 
   function activeToken(): string | null {
-    return getRequestToken() ?? lastToken;
+    if (hasSessionContext()) {
+      return getRequestToken();
+    }
+    return lastToken;
   }
 
   return {
@@ -135,7 +146,7 @@ async function verifyPassword(
 
 function deriveKey(password: string, salt: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    scrypt(password, salt, HASH_LENGTH, (err, derivedKey) => {
+    scrypt(password, salt, HASH_LENGTH, SCRYPT, (err, derivedKey) => {
       if (err) {
         reject(err);
         return;

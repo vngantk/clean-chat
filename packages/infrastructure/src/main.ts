@@ -35,8 +35,9 @@ function parsePort(value: string | undefined): number {
 }
 
 /**
- * `CORS_ORIGIN=*` (default) or a comma-separated allowlist,
- * e.g. `http://127.0.0.1:5173,http://localhost:5173`.
+ * `CORS_ORIGIN=*` (default on loopback) or a comma-separated allowlist,
+ * e.g. `http://127.0.0.1:5173,http://localhost:5173`. Binding off loopback
+ * requires an explicit allowlist (`*` throws).
  */
 function parseCorsOrigins(value: string | undefined): CorsOrigins {
   if (value === undefined || value === "" || value === "*") {
