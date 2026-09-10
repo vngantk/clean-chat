@@ -35,6 +35,7 @@ npm start
 
 - `npm run typecheck` — `tsc -b` across the three packages
 - `npm test` — Vitest (interactors + in-memory persistence + Express HTTP)
+- `npm run test:coverage` — same tests with a text, HTML, and LCOV coverage report in `coverage/`
 - `npm run build` — emit `packages/*/dist`
 - `npm run lint` — oxlint
 - `npm run clean` — remove build output

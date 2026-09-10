@@ -11,7 +11,7 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Driving use cases live in `packages/core/src/use-cases/` and are imported as `@clean-chat/core/use-cases`
 - Domain entities live in `packages/core/src/domain/` and are imported as `@clean-chat/core/domain`. That folder must not import use-cases or events
 - Explicit realtime: `AppEvent` + `EventSubscriber` (`@clean-chat/core`); `EventPublisher` (application); publish after `UnitOfWork.run` commits
-- Interactor tests: Vitest, ports mocked (`npm test`); in-memory persistence tests live next to the adapter
+- Interactor tests: Vitest, ports mocked (`npm test`); coverage via `npm run test:coverage`; in-memory persistence tests live next to the adapter
 - Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes). `createInMemoryAuth` (scrypt, one process session), `createSystemClock`, `createRandomIdGenerator`
 - Events: `createInMemoryEventBus` implements `EventPublisher` and `EventSubscriber` in one object
 - HTTP: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCaseName}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, and optional `host`, and returns a `Lifecycle`. Clients: `createHttpUseCase(url)` POSTs JSON; `createHttpEventSubscriber(baseUrl)` implements `EventSubscriber` over SSE `fetch`. JSON / **204** for use cases (`void` → 204 No Content). Not a public REST API

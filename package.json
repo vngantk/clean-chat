@@ -9,12 +9,14 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --pretty",
-    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo",
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo coverage",
     "lint": "oxlint packages",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "start": "npm run build && node packages/infrastructure/dist/main.js"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.7",
     "oxlint": "^1.79.0",
     "typescript": "~5.9.2",
     "vitest": "^3.2.4"

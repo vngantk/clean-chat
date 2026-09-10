@@ -10,6 +10,12 @@ export default defineConfig({
       "packages/application/test/**/*.test.ts",
       "packages/infrastructure/test/**/*.test.ts",
     ],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      reportsDirectory: "./coverage",
+      include: ["packages/*/src/**/*.ts"],
+    },
   },
   resolve: {
     alias: {
