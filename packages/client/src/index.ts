@@ -12,4 +12,5 @@ export {
   createHttpEventSubscriber,
   createHttpUseCase,
   type HttpClientOptions,
+  type TokenStore,
 } from "./http/index.js";

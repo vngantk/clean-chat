@@ -37,6 +37,7 @@ export {
   createExpressEventSubscriptionRouter,
   createExpressServer,
   createExpressUseCaseRouter,
+  DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
   type CorsOrigins,
   type ExpressServer,
   type ExpressServerDeps,

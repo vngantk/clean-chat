@@ -4,7 +4,10 @@ export {
   type ExpressServer,
   type ExpressServerDeps,
 } from "./express-server.js";
-export { createExpressEventSubscriptionRouter } from "./express-event-subscription-router.js";
+export {
+  createExpressEventSubscriptionRouter,
+  DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
+} from "./express-event-subscription-router.js";
 export type { ExpressEventSubscriptionRouterOptions } from "./express-event-subscription-router.js";
 export {
   createExpressUseCaseRouter,

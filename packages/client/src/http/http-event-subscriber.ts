@@ -1,6 +1,12 @@
 import type { AppEvent, EventSubscriber } from "@clean-chat/core";
 import { readHttpErrorMessage } from "./http-error.js";
 
+/** First reconnect wait; doubles each attempt up to {@link SSE_RECONNECT_MAX_MS}. */
+export const SSE_RECONNECT_BASE_MS = 500;
+
+/** Cap on SSE reconnect backoff. */
+export const SSE_RECONNECT_MAX_MS = 10_000;
+
 function isAbortError(err: unknown): boolean {
   return err instanceof Error && err.name === "AbortError";
 }
@@ -60,38 +66,144 @@ async function readSse(
   }
 }
 
+function reconnectDelay(attempt: number, overrideMs?: number): number {
+  if (overrideMs !== undefined) {
+    return overrideMs;
+  }
+  return Math.min(
+    SSE_RECONNECT_MAX_MS,
+    SSE_RECONNECT_BASE_MS * 2 ** Math.min(attempt - 1, 5),
+  );
+}
+
+function waitForReconnect(
+  ms: number,
+  signal: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
+}
+
+function isAppEvent(value: unknown): value is AppEvent {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    typeof (value as { type: unknown }).type === "string"
+  );
+}
+
 export type HttpEventSubscriberOptions = {
   getHeaders?: () => Record<string, string>;
+  /**
+   * Fixed wait before reconnecting after a dropped stream. When omitted,
+   * waits {@link SSE_RECONNECT_BASE_MS} and doubles each attempt up to
+   * {@link SSE_RECONNECT_MAX_MS}.
+   */
+  reconnectDelayMs?: number;
 };
 
 /**
- * Driving adapter: each {@link EventSubscriber.subscribe} opens
- * `GET {baseUrl}/{type}` as SSE and forwards `data:` JSON frames.
- * Uses platform `fetch` (Node 20+ and browsers). `Unsubscribe` aborts the
- * request. Failed streams end without retry.
+ * Driving adapter: one multiplexed `GET {baseUrl}` SSE stream (all
+ * `AppEvent` types). {@link EventSubscriber.subscribe} registers a
+ * type-filtered handler on that shared connection so a tab does not open
+ * four long-lived HTTP/1.1 sockets (the browser allows six per origin).
+ * `Unsubscribe` of the last handler aborts the stream. Dropped streams
+ * reconnect with backoff until every handler is gone.
  */
 export function createHttpEventSubscriber(
   baseUrl: string,
   options?: HttpEventSubscriberOptions,
 ): EventSubscriber {
   const root = baseUrl.replace(/\/+$/, "");
+  const handlers = new Map<AppEvent["type"], Set<(event: AppEvent) => void>>();
+  let stream: AbortController | undefined;
+
+  function handlerCount(): number {
+    let n = 0;
+    for (const set of handlers.values()) {
+      n += set.size;
+    }
+    return n;
+  }
+
+  function dispatch(value: unknown): void {
+    if (!isAppEvent(value)) {
+      return;
+    }
+    const set = handlers.get(value.type);
+    if (set === undefined) {
+      return;
+    }
+    for (const handler of set) {
+      handler(value);
+    }
+  }
+
+  function startStream(): void {
+    if (stream !== undefined) {
+      return;
+    }
+    const ac = new AbortController();
+    stream = ac;
+    const getHeaders = options?.getHeaders ?? (() => ({}));
+    void (async () => {
+      let attempt = 0;
+      while (!ac.signal.aborted) {
+        try {
+          await readSse(root, ac.signal, dispatch, getHeaders);
+          if (ac.signal.aborted) {
+            return;
+          }
+          attempt += 1;
+        } catch (err: unknown) {
+          if (ac.signal.aborted || isAbortError(err)) {
+            return;
+          }
+          attempt += 1;
+        }
+        const delay =
+          options?.reconnectDelayMs !== undefined
+            ? reconnectDelay(attempt, options.reconnectDelayMs)
+            : reconnectDelay(attempt);
+        await waitForReconnect(delay, ac.signal);
+      }
+    })();
+  }
+
+  function stopStream(): void {
+    stream?.abort();
+    stream = undefined;
+  }
+
   return {
     subscribe(type, handler) {
-      const ac = new AbortController();
-      void readSse(
-        `${root}/${type}`,
-        ac.signal,
-        (value) => {
-          handler(value as Extract<AppEvent, { type: typeof type }>);
-        },
-        options?.getHeaders ?? (() => ({})),
-      ).catch((err: unknown) => {
-        if (ac.signal.aborted || isAbortError(err)) {
-          return;
-        }
-      });
+      let set = handlers.get(type);
+      if (set === undefined) {
+        set = new Set();
+        handlers.set(type, set);
+      }
+      const wrapped = handler as (event: AppEvent) => void;
+      set.add(wrapped);
+      startStream();
       return () => {
-        ac.abort();
+        set.delete(wrapped);
+        if (handlerCount() === 0) {
+          stopStream();
+        }
       };
     },
   };

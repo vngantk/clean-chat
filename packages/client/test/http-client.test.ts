@@ -79,4 +79,32 @@ describe("createHttpClient", () => {
     expect(received).toEqual([{ type: "channel-list-changed" }]);
     unsubscribe();
   });
+
+  it("persists the bearer on tokenStore across client instances", async () => {
+    server = createServer({ port: 0 });
+    await server.start();
+    const baseUrl = `http://${server.host}:${String(server.port)}`;
+    let stored: string | undefined;
+    const tokenStore = {
+      get: () => stored,
+      set: (token: string | undefined) => {
+        stored = token;
+      },
+    };
+
+    const first = createHttpClient({ baseUrl, tokenStore });
+    const user = await first.signUp.execute({
+      email: "ada@example.com",
+      password: "password1",
+      name: "Ada",
+    });
+    expect(stored).toEqual(expect.any(String));
+
+    const second = createHttpClient({ baseUrl, tokenStore });
+    await expect(second.getCurrentUser.execute()).resolves.toEqual(user);
+
+    await second.signOut.execute();
+    expect(stored).toBeUndefined();
+    await expect(second.getCurrentUser.execute()).resolves.toBeNull();
+  });
 });

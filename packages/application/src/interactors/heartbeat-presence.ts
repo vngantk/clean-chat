@@ -7,9 +7,10 @@ import type { UnitOfWork } from "../transaction.js";
 import { requireUser } from "./require-user.js";
 
 /**
- * Mark this tab online in a channel. Auth required. Publishes
- * `presence-changed` after commit only when membership changes, not on
- * every heartbeat tick.
+ * Mark this tab online in a channel. Auth required. A tab is only in one
+ * room: other channels for this `sessionId` are cleared. Publishes
+ * `presence-changed` after commit when this room’s membership changes or
+ * when the tab leaves another room — not on every heartbeat tick.
  */
 export function createHeartbeatPresence(deps: {
   auth: AuthPort;
@@ -21,7 +22,12 @@ export function createHeartbeatPresence(deps: {
     name: HeartbeatPresenceName,
     async execute(input) {
       const user = await requireUser(deps.auth);
-      const membershipChanged = await deps.uow.run(async (tx) => {
+      const { joined, left } = await deps.uow.run(async (tx) => {
+        const left = await deps.presence.removeSessionFromOtherChannels(
+          tx,
+          input.sessionId,
+          input.channelId,
+        );
         const previous = await deps.presence.get(
           tx,
           input.channelId,
@@ -34,15 +40,20 @@ export function createHeartbeatPresence(deps: {
           online: true,
           name: user.name,
         });
-        return (
-          previous === null ||
-          !previous.online ||
-          previous.userId !== user.id
-        );
+        return {
+          joined:
+            previous === null ||
+            !previous.online ||
+            previous.userId !== user.id,
+          left,
+        };
       });
 
-      if (membershipChanged) {
+      if (joined) {
         await deps.events.publish(presenceChanged(input.channelId));
+      }
+      for (const channelId of left) {
+        await deps.events.publish(presenceChanged(channelId));
       }
     },
   };

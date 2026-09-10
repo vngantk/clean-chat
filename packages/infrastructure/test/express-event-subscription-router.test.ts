@@ -211,4 +211,23 @@ describe("createExpressEventSubscriptionRouter", () => {
     expect(root.status).toBe(404);
     await prefixed.body?.cancel();
   });
+
+  it("multiplexes every event type on GET /", async () => {
+    const mock = createMockSubscriber();
+    const origin = await mount(
+      ["channel-list-changed", "message-list-changed"],
+      mock.subscriber,
+    );
+
+    const res = await fetch(`${origin}/`);
+    expect(res.status).toBe(200);
+    expect(mock.count("channel-list-changed")).toBe(1);
+    expect(mock.count("message-list-changed")).toBe(1);
+
+    mock.emit({ type: "message-list-changed", channelId: "ch-1" });
+    await expect(readFirstSseData(res)).resolves.toEqual({
+      type: "message-list-changed",
+      channelId: "ch-1",
+    });
+  });
 });

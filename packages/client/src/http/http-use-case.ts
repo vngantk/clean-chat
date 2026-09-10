@@ -15,6 +15,8 @@ export type HttpUseCaseOptions = {
  * `fetch` (Node 20+ and browsers). Server `void` Output is **204**; this
  * adapter yields `undefined`. Non-OK responses throw with the server
  * `{ error }` string (or `HTTP {status}` if the body is not that shape).
+ * Requests use `keepalive: true` so `disconnect-presence` can finish during
+ * `pagehide`.
  */
 export function createHttpUseCase<Input, Output, Name extends string = string>(
   name: Name,
@@ -30,10 +32,11 @@ export function createHttpUseCase<Input, Output, Name extends string = string>(
       };
       const res =
         input === undefined
-          ? await fetch(url, { method: "POST", headers })
+          ? await fetch(url, { method: "POST", headers, keepalive: true })
           : await fetch(url, {
               method: "POST",
               headers,
+              keepalive: true,
               body: JSON.stringify(input),
             });
       options?.onResponse?.(res);

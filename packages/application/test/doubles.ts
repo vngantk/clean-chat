@@ -106,6 +106,7 @@ export function mockPresence(
     get: vi.fn(async () => null),
     put: vi.fn(async () => undefined),
     remove: vi.fn(async () => undefined),
+    removeSessionFromOtherChannels: vi.fn(async () => []),
     ...overrides,
   };
 }

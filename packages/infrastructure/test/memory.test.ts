@@ -126,6 +126,37 @@ describe("in-memory persistence", () => {
     });
   });
 
+  it("drops a session from every channel except the one it heartbeats", async () => {
+    const { uow, presence } = createInMemoryPersistence();
+    const sess = "sess-1";
+    await uow.run(async (tx) => {
+      await presence.put(tx, {
+        channelId: "ch-1",
+        userId: user.id,
+        sessionId: sess,
+        online: true,
+        name: user.name,
+      });
+      await presence.put(tx, {
+        channelId: "ch-2",
+        userId: user.id,
+        sessionId: sess,
+        online: true,
+        name: user.name,
+      });
+    });
+    const left = await uow.run((tx) =>
+      presence.removeSessionFromOtherChannels(tx, sess, "ch-2"),
+    );
+    expect(left).toEqual(["ch-1"]);
+    await uow.run(async (tx) => {
+      await expect(presence.get(tx, "ch-1", sess)).resolves.toBeNull();
+      await expect(presence.get(tx, "ch-2", sess)).resolves.toMatchObject({
+        channelId: "ch-2",
+      });
+    });
+  });
+
   it("rolls the store back when UnitOfWork.run throws", async () => {
     const { uow, channels } = createInMemoryPersistence();
     await expect(

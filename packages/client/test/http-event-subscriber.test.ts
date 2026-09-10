@@ -101,7 +101,7 @@ describe("createHttpEventSubscriber", () => {
     const unsubscribe = client.subscribe("channel-list-changed", (event) => {
       received.push(event);
     });
-    await waitFor(() => g.open() === 1);
+    await waitFor(() => g.open() === 2);
     await bus.publish(messageListChanged("ch-1"));
     await bus.publish(channelListChanged());
     await waitFor(() => received.length === 1);
@@ -149,5 +149,70 @@ describe("createHttpEventSubscriber", () => {
 
     expect(received).toEqual([{ type: "channel-list-changed" }]);
     unsubscribe();
+  });
+
+  it("reconnects after the SSE stream ends", async () => {
+    const { default: express } = await import("express");
+    const app = express();
+    let connections = 0;
+    app.get("/", (_req, res) => {
+      connections += 1;
+      res.status(200);
+      res.setHeader("Content-Type", "text/event-stream");
+      res.write(
+        `data: ${JSON.stringify({ type: "channel-list-changed" })}\n\n`,
+      );
+      res.end();
+    });
+    const listening = await new Promise<import("node:http").Server>(
+      (resolve, reject) => {
+        const s = app.listen(0, "127.0.0.1", () => resolve(s));
+        s.once("error", reject);
+      },
+    );
+    const addr = listening.address();
+    if (addr === null || typeof addr === "string") {
+      throw new Error("expected a TCP port");
+    }
+    const client = createHttpEventSubscriber(
+      `http://127.0.0.1:${String(addr.port)}`,
+      { reconnectDelayMs: 20 },
+    );
+    const received: AppEvent[] = [];
+    const unsubscribe = client.subscribe("channel-list-changed", (event) => {
+      received.push(event);
+    });
+    await waitFor(() => received.length >= 2);
+    expect(connections).toBeGreaterThanOrEqual(2);
+    unsubscribe();
+    await new Promise<void>((resolve, reject) => {
+      listening.closeAllConnections();
+      listening.close((err) => (err ? reject(err) : resolve()));
+    });
+  });
+
+  it("shares one SSE stream across subscribe() calls", async () => {
+    const bus = createInMemoryEventBus();
+    const g = gate(bus);
+    const base = await origin(["channel-list-changed"], g.subscriber);
+    const client = createHttpEventSubscriber(base);
+    const received: AppEvent[] = [];
+
+    const unsubscribeA = client.subscribe("channel-list-changed", (event) => {
+      received.push(event);
+    });
+    const unsubscribeB = client.subscribe("channel-list-changed", (event) => {
+      received.push(event);
+    });
+    await waitFor(() => g.open() === 1);
+    await bus.publish(channelListChanged());
+    await waitFor(() => received.length === 2);
+
+    expect(received).toEqual([
+      { type: "channel-list-changed" },
+      { type: "channel-list-changed" },
+    ]);
+    unsubscribeA();
+    unsubscribeB();
   });
 });

@@ -98,7 +98,7 @@ Own messages: right-aligned primary bubble, hover trash. Others: left-aligned mu
 
 ### Presence (who is in this channel)
 
-Per **channel** (room), per **user**, with a **session/tab** so two tabs can be distinguished internally.
+Per **channel** (room), per **user**, with a **session/tab** so two tabs can be distinguished internally. A tab is online only in the channel it currently has open.
 
 Show users with `online === true`: up to 5 avatars (initials from display name), `+N` overflow, and `"N online"`. Loading: `Checking who's here…`. None: `Nobody else here`.
 

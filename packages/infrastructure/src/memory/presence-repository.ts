@@ -1,4 +1,5 @@
 import type { PresenceRepository } from "@clean-chat/application";
+import type { ChannelId } from "@clean-chat/core/domain";
 import { presenceKey, type InMemoryStore } from "./store.js";
 
 export function createInMemoryPresenceRepository(
@@ -25,6 +26,20 @@ export function createInMemoryPresenceRepository(
 
     async remove(_tx, channelId, sessionId) {
       store.presence.delete(presenceKey(channelId, sessionId));
+    },
+
+    async removeSessionFromOtherChannels(_tx, sessionId, keepChannelId) {
+      const left: ChannelId[] = [];
+      for (const [key, row] of store.presence) {
+        if (row.sessionId !== sessionId || row.channelId === keepChannelId) {
+          continue;
+        }
+        store.presence.delete(key);
+        if (row.online) {
+          left.push(row.channelId);
+        }
+      }
+      return left;
     },
   };
 }

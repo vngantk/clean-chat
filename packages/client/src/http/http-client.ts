@@ -26,18 +26,30 @@ import {
 } from "./http-use-case.js";
 
 /**
+ * Persist a bearer token across reloads (e.g. `localStorage`).
+ * When provided, {@link createHttpClient} reads it on each request so another
+ * tab’s sign-out is visible without restarting the client.
+ */
+export type TokenStore = {
+  get(): string | undefined;
+  set(token: string | undefined): void;
+};
+
+/**
  * Options for {@link createHttpClient}.
  */
 export type HttpClientOptions = {
   /**
    * Origin of the composition root, e.g. `http://127.0.0.1:3000`.
    * Trailing slashes are ignored. Use cases are `POST {baseUrl}/use-cases/{name}`;
-   * events are `GET {baseUrl}/events/{type}` (SSE).
+   * events are `GET {baseUrl}/events` (one multiplexed SSE for every type).
    */
   baseUrl: string;
+  /** Optional persistence for the session bearer (browser `localStorage`). */
+  tokenStore?: TokenStore;
 };
 
-function useCaseUrl(baseUrl: string, name: string): string {
+function toUseCaseUrl(baseUrl: string, name: string): string {
   return `${baseUrl}/use-cases/${name}`;
 }
 
@@ -46,27 +58,40 @@ function useCaseUrl(baseUrl: string, name: string): string {
  * matching Express route; {@link Client.eventSubscriber} is
  * {@link createHttpEventSubscriber}. Uses platform `fetch` (Node 20+ and
  * browsers). Holds a bearer token from sign-in / sign-up response
- * `Authorization` and sends it on later requests.
+ * `Authorization` and sends it on later requests. {@link HttpClientOptions.tokenStore}
+ * persists that token across reloads.
  */
 export function createHttpClient(options: HttpClientOptions): Client {
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
-  let bearer: string | undefined;
+  const tokenStore = options.tokenStore;
+  let bearer: string | undefined = tokenStore?.get();
+
+  function readBearer(): string | undefined {
+    return tokenStore !== undefined ? tokenStore.get() : bearer;
+  }
+
+  function writeBearer(token: string | undefined): void {
+    bearer = token;
+    tokenStore?.set(token);
+  }
 
   const httpOptions = {
-    getHeaders: () =>
-      bearer === undefined
+    getHeaders: () => {
+      const token = readBearer();
+      return token === undefined
         ? {}
-        : { authorization: bearerAuthorizationHeader(bearer) },
+        : { authorization: bearerAuthorizationHeader(token) };
+    },
     onResponse: (response: Response) => {
       const issued = readIssuedBearerToken(response);
       if (issued !== null) {
-        bearer = issued;
+        writeBearer(issued);
       }
     },
   };
 
   function httpUseCase<I, O, N extends string>(name: N): UseCase<I, O, N> {
-    return createHttpUseCase(name, useCaseUrl(baseUrl, name), httpOptions);
+    return createHttpUseCase(name, toUseCaseUrl(baseUrl, name), httpOptions);
   }
 
   const signOut = httpUseCase<void, void, typeof SignOutName>(SignOutName);
@@ -78,7 +103,7 @@ export function createHttpClient(options: HttpClientOptions): Client {
       name: SignOutName,
       async execute() {
         await signOut.execute();
-        bearer = undefined;
+        writeBearer(undefined);
       },
     },
     getCurrentUser: httpUseCase(GetCurrentUserName),

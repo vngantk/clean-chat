@@ -1,6 +1,6 @@
 ---
 description: Enforce inward-only imports between Clean Architecture packages
-globs: packages/**/*.ts
+globs: packages/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
@@ -21,3 +21,4 @@ export type Channel = Static<typeof ChannelSchema>;
 - `@clean-chat/application` — core (interactors and driven ports live here)
 - `@clean-chat/infrastructure` — any inner package; implement ports here (`UnitOfWork`, repositories, `EventPublisher` + `EventSubscriber`)
 - `@clean-chat/client` — core only; isomorphic driving adapters (`createHttpClient` in `src/http/`)
+- `@clean-chat/web` — Vite + React SPA; may import `@clean-chat/client` and `@clean-chat/core` only

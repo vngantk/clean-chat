@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. React is **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. The SPA is Vite + React in `@clean-chat/web` (Tailwind 4, shadcn/ui `base-nova`, same look as convex-chat).
 
 ## Why these layers
 
@@ -12,12 +12,14 @@ Uncle Bob’s circles, named to match how we will build:
 | --- | --- | --- |
 | Core | `@clean-chat/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`) |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createServer`, React later |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createServer` |
 | Driving adapters | `@clean-chat/client` | HTTP `createHttpClient` (typed use cases + `eventSubscriber` via `fetch`) |
+| Driving UI | `@clean-chat/web` | Vite + React SPA (Tailwind, shadcn). Must not import application or infrastructure |
 
 ```
-  infrastructure  ──►  application  ──►  core
-  client          ──────────────────────►  core
+infrastructure  ──►  application  ──►  core
+client          ──────────────────────►  core
+web             ──►  client ───────────►  core
       dependencies point inward only
 
   core → nothing except TypeBox
@@ -26,19 +28,19 @@ Uncle Bob’s circles, named to match how we will build:
 
 A use case must not import Postgres, React, or a websocket library. Those appear later as **adapters** that implement ports defined inward.
 
-## Runtime (target, not built)
+## Runtime
 
 ```
-Browser (SPA, port TBD)
-  └─ live subscription (SSE) ─► app server
+Browser (Vite SPA, localhost:5173)
+  └─ createHttpClient (POST use cases + SSE) ─► Express (127.0.0.1:3000)
                                                       ├─ use cases
                                                       ├─ persistence adapter
                                                       ├─ auth / sessions
-                                                      ├─ typing expiry (TTL or scheduler)
-                                                      └─ presence heartbeats
+                                                      ├─ typing expiry (TTL on read; UI also hides stale rows)
+                                                      └─ presence heartbeats (client, 10s)
 ```
 
-Convex mapped `query` → live read and `mutation` → transactional write. This port must preserve that **user-visible** contract (see PRODUCT.md realtime section). The mechanism is an infrastructure decision.
+`VITE_API_URL` defaults to `http://127.0.0.1:3000`. Convex mapped `query` → live read and `mutation` → transactional write. This port preserves that **user-visible** contract (see PRODUCT.md realtime section): subscribe to `AppEvent`s, then re-run the matching query use case.
 
 ## Use cases
 
@@ -61,7 +63,7 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 | `ListTyping` | `list-typing` | `{ channelId }` | `Typing[]` | — |
 | `UpsertTyping` / `ClearTyping` | `upsert-typing` / `clear-typing` | `{ channelId }` | `void` | `typing-changed` |
 | `ListPresence` | `list-presence` | `{ channelId }` | `Presence[]` | — |
-| `HeartbeatPresence` | `heartbeat-presence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
+| `HeartbeatPresence` | `heartbeat-presence` | `{ channelId, sessionId }` | `void` | `presence-changed` (this room if membership changed; other rooms this tab left) |
 | `DisconnectPresence` | `disconnect-presence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
 `EventPublisher` (application) and `EventSubscriber` (core) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
@@ -82,7 +84,7 @@ Interfaces live under `packages/application/src/` (repositories in `src/reposito
 
 **`MessageRepository`:** `listLatestByChannel` (join `authorName`), `getById`, `insert(NewMessage)`, `remove`.
 
-**`TypingRepository` / `PresenceRepository`:** list / get / put / remove keyed as in PRODUCT.md.
+**`TypingRepository` / `PresenceRepository`:** list / get / put / remove keyed as in PRODUCT.md. Presence also `removeSessionFromOtherChannels` so a tab is only online in the room it heartbeats.
 
 **`Clock.now()`** and **`IdGenerator.next()`** are not transactional.
 
@@ -100,12 +102,13 @@ execute
 | `Channel names must be 1–32 characters.` | Same strings as PRODUCT.md |
 | Password hashing, session | Infrastructure `createInMemoryAuth` (`scrypt` with explicit `N`/`r`/`p`/`maxmem`, bearer tokens). HTTP binds `Authorization: Bearer` per request. `DisconnectPresence` requires that session |
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
-| Tailwind / shadcn / Vite | Infrastructure or a future `packages/web` driving adapter |
+| Tailwind / shadcn / Vite | `@clean-chat/web` (driving UI adapter) |
 | Selected `channelId` | Presentation state, not a router |
 | HTTP `POST /{useCase.name}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204. Known errors → 401/403/400 `{ error }`; unexpected → 500 `Internal server error`. `sign-in`/`sign-up` are rate-limited; JSON body cap 16kb |
-| HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber`. Requires a bearer session; concurrent streams are capped per token |
+| HTTP `GET /events` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber`. Multiplexed `GET /` streams every type (the SPA uses this so one tab is one HTTP/1.1 socket). `GET /{eventType}` remains. Requires a bearer session; concurrent streams are capped per token (default 16) |
 | HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` / composition root `createServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`). Bound address is `server.port` / `server.host` after `start`. `*` CORS only on loopback; Helmet-equivalent headers |
-| HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Non-OK responses throw the `{ error }` string |
+| HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Optional `tokenStore`. Non-OK responses throw the `{ error }` string. SSE reconnects with backoff. Use-case POSTs use `keepalive` |
+| Chat SPA | `@clean-chat/web` Vite + React. `ClientProvider` + live query / presence hooks. Selected channel is React state. Bearer in `localStorage` |
 
 ## File map (now)
 
@@ -129,6 +132,7 @@ execute
 | `packages/infrastructure/src/index.ts` | Drivers + composition root |
 | `packages/infrastructure/src/server.ts` | `createServer` wires adapters, interactors, Express |
 | `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST` |
+| `packages/web/` | Vite + React SPA (`src/components/`, live-query and presence hooks) |
 | `docs/PRODUCT.md` | Behavior to match |
 
 ## What not to copy from convex-chat
@@ -138,6 +142,3 @@ execute
 - Presence `roomToken` / `sessionToken`
 - The word “Convex” in UI copy
 
-## Next
-
-A runnable UI (the chat SPA).

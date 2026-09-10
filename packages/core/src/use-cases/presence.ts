@@ -42,9 +42,10 @@ export const HeartbeatPresenceInputSchema = Type.Object(
 export type HeartbeatPresenceInput = Static<typeof HeartbeatPresenceInputSchema>;
 
 /**
- * Auth required. `userId` on the row is the actor.
- * Publishes `presence-changed` only when membership actually changes,
- * not on every heartbeat tick.
+ * Auth required. `userId` on the row is the actor. A tab is only in the
+ * channel it heartbeats: other rooms for this `sessionId` are cleared.
+ * Publishes `presence-changed` when this room’s membership changes or the
+ * tab leaves another room — not on every heartbeat tick.
  */
 export const HeartbeatPresenceName = "heartbeat-presence" as const;
 

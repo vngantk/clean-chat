@@ -1,5 +1,5 @@
 import { presenceChanged } from "@clean-chat/core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createDisconnectPresence,
   PRESENCE_DISCONNECT_FORBIDDEN_ERROR,
@@ -92,6 +92,26 @@ describe("createHeartbeatPresence", () => {
       events,
     }).execute({ channelId: "ch-1", sessionId: "sess-1" });
     expect(events.publish).toHaveBeenCalledWith(presenceChanged("ch-1"));
+  });
+
+  it("clears this tab from other channels and publishes those rooms", async () => {
+    const presence = mockPresence({
+      removeSessionFromOtherChannels: vi.fn(async () => ["ch-2"]),
+    });
+    const events = mockEvents();
+    await createHeartbeatPresence({
+      auth: mockAuth(),
+      uow: mockUow(),
+      presence,
+      events,
+    }).execute({ channelId: "ch-1", sessionId: "sess-1" });
+    expect(presence.removeSessionFromOtherChannels).toHaveBeenCalledWith(
+      tx,
+      "sess-1",
+      "ch-1",
+    );
+    expect(events.publish).toHaveBeenCalledWith(presenceChanged("ch-1"));
+    expect(events.publish).toHaveBeenCalledWith(presenceChanged("ch-2"));
   });
 });
 
