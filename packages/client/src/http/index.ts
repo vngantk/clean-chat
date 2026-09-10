@@ -5,5 +5,12 @@
 
 export type { HttpClientOptions } from "./http-client.js";
 export { createHttpClient } from "./http-client.js";
-export { createHttpEventSubscriber } from "./http-event-subscriber.js";
-export { createHttpUseCase } from "./http-use-case.js";
+export {
+  createHttpEventSubscriber,
+  type HttpEventSubscriberOptions,
+} from "./http-event-subscriber.js";
+export {
+  createHttpUseCase,
+  readIssuedBearerToken,
+  type HttpUseCaseOptions,
+} from "./http-use-case.js";

@@ -28,6 +28,25 @@ describe("createBackend", () => {
     });
     await expect(client.getCurrentUser.execute()).resolves.toEqual(user);
 
+    const other = createHttpClient({
+      baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+    });
+    const grace = await other.signUp.execute({
+      email: "grace@example.com",
+      password: "password1",
+      name: "Grace",
+    });
+    await expect(client.getCurrentUser.execute()).resolves.toEqual(user);
+    await expect(other.getCurrentUser.execute()).resolves.toEqual(grace);
+
+    await expect(
+      client.signUp.execute({
+        email: "bad@example.com",
+        password: "short",
+        name: "Bad",
+      }),
+    ).rejects.toThrow(/HTTP 500/);
+
     const generalId = await client.ensureGeneralChannel.execute();
     const channels = await client.listChannels.execute();
     expect(channels).toEqual([

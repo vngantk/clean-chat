@@ -4,6 +4,10 @@ import {
   EMAIL_TAKEN_ERROR,
   INVALID_CREDENTIALS_ERROR,
 } from "../src/memory/auth.js";
+import {
+  getIssuedToken,
+  runWithSessionContext,
+} from "../src/memory/session-context.js";
 import { createRandomIdGenerator } from "../src/memory/id-generator.js";
 import { createInMemoryStore } from "../src/memory/store.js";
 import { createInMemoryUserRepository } from "../src/memory/user-repository.js";
@@ -63,6 +67,28 @@ describe("createInMemoryAuth", () => {
     const signedIn = await auth.signIn("ada@example.com", password);
     expect(signedIn).toEqual(created);
     await expect(auth.currentUser()).resolves.toEqual(created);
+  });
+
+  it("isolates two sessions by bearer token", async () => {
+    const { auth } = authWithStore();
+    const ada = await runWithSessionContext(null, async () => {
+      const user = await auth.signUp("ada@example.com", password, "Ada");
+      return { user, token: getIssuedToken() };
+    });
+    const grace = await runWithSessionContext(null, async () => {
+      const user = await auth.signUp("grace@example.com", password, "Grace");
+      return { user, token: getIssuedToken() };
+    });
+    expect(ada.token).toBeTruthy();
+    expect(grace.token).toBeTruthy();
+    expect(ada.token).not.toBe(grace.token);
+
+    await runWithSessionContext(ada.token, async () => {
+      await expect(auth.currentUser()).resolves.toEqual(ada.user);
+    });
+    await runWithSessionContext(grace.token, async () => {
+      await expect(auth.currentUser()).resolves.toEqual(grace.user);
+    });
   });
 
   it("sign-out clears the session but keeps the account", async () => {

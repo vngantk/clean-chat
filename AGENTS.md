@@ -12,12 +12,12 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Domain entities live in `packages/core/src/domain/` and are imported as `@clean-chat/core/domain`. That folder must not import use-cases or events
 - Explicit realtime: `AppEvent` + `EventSubscriber` (`@clean-chat/core`); `EventPublisher` (application); publish after `UnitOfWork.run` commits
 - Interactor tests: Vitest, ports mocked (`npm test`); coverage via `npm run test:coverage`; in-memory persistence tests live next to the adapter
-- Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes). `createInMemoryAuth` (scrypt, one process session), `createSystemClock`, `createRandomIdGenerator`
+- Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes). `createInMemoryAuth` (scrypt, bearer tokens via `Authorization`, AsyncLocalStorage per request), `createSystemClock`, `createRandomIdGenerator`
 - Events: `createInMemoryEventBus` implements `EventPublisher` and `EventSubscriber` in one object
 - HTTP server: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCaseName}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, optional `host`, optional `corsOrigins` (`*` by default), and returns a `Lifecycle`. JSON / **204** for use cases (`void` → 204 No Content). Not a public REST API
-- HTTP client: `@clean-chat/client` (`src/http/`). `createHttpClient({ baseUrl })` returns a `Client` (typed use-case properties + `eventSubscriber`) over platform `fetch` (Node 20+ and browsers). Also `createHttpUseCase(url)` and `createHttpEventSubscriber(baseUrl)`. Import as `@clean-chat/client` or `@clean-chat/client/http`. Other transports may live in sibling folders later
+- HTTP client: `@clean-chat/client` (`src/http/`). `createHttpClient({ baseUrl })` returns a `Client` (typed use-case properties + `eventSubscriber`) over platform `fetch` (Node 20+ and browsers). Stores the bearer token from sign-in / sign-up `Authorization` and sends it on later requests. Also `createHttpUseCase(url)` and `createHttpEventSubscriber(baseUrl)`. Import as `@clean-chat/client` or `@clean-chat/client/http`. Other transports may live in sibling folders later
 - Composition root: `createBackend` in `@clean-chat/infrastructure` (`src/backend.ts`); `src/main.ts` listens. `POST /use-cases/{name}`, `GET /events/{type}`. `CORS_ORIGIN` (default `*`, or a comma-separated allowlist)
-- No UI framework or cookie/JWT session library chosen yet
+- No UI framework chosen yet. Session is `Authorization: Bearer` (not cookies/JWT library)
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
 

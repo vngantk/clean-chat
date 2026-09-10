@@ -14,7 +14,11 @@ import {
   createSignIn,
   createSignOut,
   createSignUp,
+  createTypeBoxInputValidator,
   createUpsertTyping,
+  createValidatedUseCase,
+  useCaseInputSchemas,
+  type InputValidator,
 } from "@clean-chat/application";
 import type { AppEvent } from "@clean-chat/core";
 import { createInMemoryAuth } from "./memory/auth.js";
@@ -23,12 +27,16 @@ import { createInMemoryEventBus } from "./memory/event-bus.js";
 import { createRandomIdGenerator } from "./memory/id-generator.js";
 import { createInMemoryPersistence } from "./memory/index.js";
 import { createExpressEventSubscriptionRouter } from "./http/express-event-subscription-router.js";
+import { createBearerSessionMiddleware } from "./http/bearer-session-middleware.js";
 import {
   createExpressServer,
   type CorsOrigins,
   type ExpressServer,
 } from "./http/express-server.js";
-import { createExpressUseCaseRouter } from "./http/express-use-case-router.js";
+import {
+  createExpressUseCaseRouter,
+  type HttpUseCase,
+} from "./http/express-use-case-router.js";
 
 const APP_EVENT_TYPES: AppEvent["type"][] = [
   "channel-list-changed",
@@ -41,6 +49,8 @@ export type BackendOptions = {
   port?: number;
   host?: string;
   corsOrigins?: CorsOrigins;
+  /** Defaults to {@link createTypeBoxInputValidator}. */
+  validator?: InputValidator;
 };
 
 /**
@@ -62,8 +72,9 @@ export function createBackend(options: BackendOptions = {}): Backend {
   const events = createInMemoryEventBus();
   const auth = createInMemoryAuth({ store: persistence.store, ids });
   const { uow, channels, messages, typing, presence } = persistence;
+  const validator = options.validator ?? createTypeBoxInputValidator();
 
-  const useCases = {
+  const useCases = validateUseCases(validator, {
     "sign-up": createSignUp(auth),
     "sign-in": createSignIn(auth),
     "sign-out": createSignOut(auth),
@@ -120,7 +131,7 @@ export function createBackend(options: BackendOptions = {}): Backend {
       presence,
       events,
     }),
-  };
+  });
 
   const server = createExpressServer({
     routers: {
@@ -129,10 +140,27 @@ export function createBackend(options: BackendOptions = {}): Backend {
     },
     port: options.port ?? 3000,
     host: options.host ?? "127.0.0.1",
+    middleware: [createBearerSessionMiddleware()],
     ...(options.corsOrigins === undefined
       ? {}
       : { corsOrigins: options.corsOrigins }),
   });
 
   return { server };
+}
+
+function validateUseCases(
+  validator: InputValidator,
+  useCases: Record<string, HttpUseCase>,
+): Record<string, HttpUseCase> {
+  const bound: Record<string, HttpUseCase> = {};
+  for (const [name, useCase] of Object.entries(useCases)) {
+    const schema = useCaseInputSchemas[name];
+    bound[name] = createValidatedUseCase({
+      validator,
+      useCase,
+      ...(schema === undefined ? {} : { schema }),
+    });
+  }
+  return bound;
 }

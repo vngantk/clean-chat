@@ -98,13 +98,13 @@ execute
 | --- | --- |
 | Slug rules, message body limits | Domain TypeBox schemas (`ChannelNameSchema`, `MessageBodySchema`) |
 | `Channel names must be 1–32 characters.` | Same strings as PRODUCT.md |
-| Password hashing, process session | Infrastructure `createInMemoryAuth` (`scrypt`). Cookies/JWT later |
+| Password hashing, session | Infrastructure `createInMemoryAuth` (`scrypt`, bearer tokens). HTTP binds `Authorization: Bearer` per request |
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
 | Tailwind / shadcn / Vite | Infrastructure or a future `packages/web` driving adapter |
 | Selected `channelId` | Presentation state, not a router |
 | HTTP `POST /{useCaseName}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204 |
 | HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber` |
-| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`, optional `corsOrigins`) |
+| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`) |
 | HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber` |
 
 ## File map (now)

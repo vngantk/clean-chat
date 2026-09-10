@@ -28,8 +28,12 @@ async function readSse(
   url: string,
   signal: AbortSignal,
   onData: (value: unknown) => void,
+  getHeaders?: () => Record<string, string>,
 ): Promise<void> {
-  const res = await fetch(url, { signal });
+  const res = await fetch(url, {
+    signal,
+    headers: getHeaders?.(),
+  });
   if (!res.ok) {
     throw new Error(`HTTP ${String(res.status)}`);
   }
@@ -55,20 +59,32 @@ async function readSse(
   }
 }
 
+export type HttpEventSubscriberOptions = {
+  getHeaders?: () => Record<string, string>;
+};
+
 /**
  * Driving adapter: each {@link EventSubscriber.subscribe} opens
  * `GET {baseUrl}/{type}` as SSE and forwards `data:` JSON frames.
  * Uses platform `fetch` (Node 20+ and browsers). `Unsubscribe` aborts the
  * request. Failed streams end without retry.
  */
-export function createHttpEventSubscriber(baseUrl: string): EventSubscriber {
+export function createHttpEventSubscriber(
+  baseUrl: string,
+  options?: HttpEventSubscriberOptions,
+): EventSubscriber {
   const root = baseUrl.replace(/\/+$/, "");
   return {
     subscribe(type, handler) {
       const ac = new AbortController();
-      void readSse(`${root}/${type}`, ac.signal, (value) => {
-        handler(value as Extract<AppEvent, { type: typeof type }>);
-      }).catch((err: unknown) => {
+      void readSse(
+        `${root}/${type}`,
+        ac.signal,
+        (value) => {
+          handler(value as Extract<AppEvent, { type: typeof type }>);
+        },
+        options?.getHeaders ?? (() => ({})),
+      ).catch((err: unknown) => {
         if (ac.signal.aborted || isAbortError(err)) {
           return;
         }

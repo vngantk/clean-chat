@@ -2,7 +2,7 @@
  * Application layer.
  *
  * Driven interfaces the server calls out through (`AuthPort`, repositories,
- * `UnitOfWork`, `EventPublisher`, …) and interactors that implement
+ * `UnitOfWork`, `EventPublisher`, `InputValidator`, …) and interactors that implement
  * `UseCase.execute`. Repositories are grouped under `repositories/`;
  * interactors under `interactors/`.
  *
@@ -14,6 +14,11 @@ export type { AuthPort } from "./auth.js";
 export type { Clock } from "./clock.js";
 export type { EventPublisher } from "./event-publisher.js";
 export type { IdGenerator } from "./id-generator.js";
+export type { InputValidator } from "./input-validator.js";
+export { INVALID_INPUT_ERROR } from "./input-validator.js";
+export { createTypeBoxInputValidator } from "./typebox-input-validator.js";
+export { createValidatedUseCase } from "./validated-use-case.js";
+export { useCaseInputSchemas } from "./use-case-input-schemas.js";
 export type { TransactionContext, UnitOfWork } from "./transaction.js";
 export type {
   ChannelRepository,

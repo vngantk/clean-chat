@@ -1,4 +1,6 @@
 import express, { type Router } from "express";
+import { getIssuedToken } from "../memory/session-context.js";
+import { bearerAuthorizationHeader } from "./bearer.js";
 
 /**
  * A use case invokable from HTTP. Input is typed as `never` so a map can hold
@@ -26,6 +28,10 @@ export function createExpressUseCaseRouter(
     router.post(`/${name}`, async (req, res, next) => {
       try {
         const output = await useCase.execute(req.body as never);
+        const issued = getIssuedToken();
+        if (issued !== null) {
+          res.setHeader("Authorization", bearerAuthorizationHeader(issued));
+        }
         if (output === undefined) {
           res.status(204).end();
           return;

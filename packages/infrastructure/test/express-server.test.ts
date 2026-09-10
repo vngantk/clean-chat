@@ -151,6 +151,9 @@ describe("createExpressServer", () => {
     expect(preflight.headers.get("access-control-allow-headers")).toMatch(
       /content-type/i,
     );
+    expect(preflight.headers.get("access-control-allow-headers")).toMatch(
+      /authorization/i,
+    );
 
     const get = await fetch(url, { headers: { Origin: origin } });
     expect(get.status).toBe(204);

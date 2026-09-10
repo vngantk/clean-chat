@@ -7,10 +7,11 @@ import type {
 
 /**
  * Identity and session. Not part of the chat-table unit of work — password
- * hashes and cookies/JWT are usually a different store.
+ * hashes and session tokens are usually a different store.
  *
  * `SignUp` trims/validates `name` then calls {@link signUp}. Actor for other
- * use cases is {@link currentUser}, not a field on `Input`.
+ * use cases is {@link currentUser}, not a field on `Input`. The HTTP adapter
+ * binds the actor from `Authorization: Bearer` for the request.
  */
 export interface AuthPort {
   signUp(

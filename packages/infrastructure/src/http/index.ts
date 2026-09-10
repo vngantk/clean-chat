@@ -9,4 +9,5 @@ export {
   createExpressUseCaseRouter,
   type HttpUseCase,
 } from "./express-use-case-router.js";
+export { createBearerSessionMiddleware } from "./bearer-session-middleware.js";
 export type { Lifecycle } from "./lifecycle.js";

@@ -1,6 +1,10 @@
 import { type Server } from "node:http";
 import cors from "cors";
-import express, { type Express, type Router } from "express";
+import express, {
+  type Express,
+  type RequestHandler,
+  type Router,
+} from "express";
 import type { Lifecycle } from "./lifecycle.js";
 
 /**
@@ -15,10 +19,12 @@ export type ExpressServerDeps = {
   host?: string;
   /**
    * CORS allowlist. Default `"*"`. Restrict to the UI origin(s) when they
-   * are known. Credentials/cookies are not enabled (sessions are not
-   * cookie-based yet).
+   * are known. Cookie credentials are not used; the UI sends
+   * `Authorization: Bearer`.
    */
   corsOrigins?: CorsOrigins;
+  /** Ran after CORS and before routers (e.g. bearer session context). */
+  middleware?: readonly RequestHandler[];
 };
 
 /**
@@ -50,11 +56,15 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
     cors({
       origin: corsOrigin(deps.corsOrigins),
       methods: ["GET", "POST"],
-      allowedHeaders: ["Content-Type"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      exposedHeaders: ["Authorization"],
       optionsSuccessStatus: 204,
       maxAge: 600,
     }),
   );
+  for (const handler of deps.middleware ?? []) {
+    app.use(handler);
+  }
   for (const [path, router] of Object.entries(deps.routers)) {
     app.use(path === "" ? "/" : path, router);
   }
