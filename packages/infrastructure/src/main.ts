@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import { createBackend } from "./backend.js";
+import type { CorsOrigins } from "./http/express-server.js";
 
 const port = parsePort(process.env["PORT"]);
 const host = process.env["HOST"] ?? "127.0.0.1";
-const { server } = createBackend({ port, host });
+const corsOrigins = parseCorsOrigins(process.env["CORS_ORIGIN"]);
+const { server } = createBackend({ port, host, corsOrigins });
 
 await server.start();
 console.log(`Clean Chat listening on http://${server.getHost()}:${String(server.getPort())}`);
@@ -30,4 +32,18 @@ function parsePort(value: string | undefined): number {
     throw new Error(`Invalid PORT: ${value}`);
   }
   return port;
+}
+
+/**
+ * `CORS_ORIGIN=*` (default) or a comma-separated allowlist,
+ * e.g. `http://127.0.0.1:5173,http://localhost:5173`.
+ */
+function parseCorsOrigins(value: string | undefined): CorsOrigins {
+  if (value === undefined || value === "" || value === "*") {
+    return "*";
+  }
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 }

@@ -25,6 +25,7 @@ import { createInMemoryPersistence } from "./memory/index.js";
 import { createExpressEventSubscriptionRouter } from "./http/express-event-subscription-router.js";
 import {
   createExpressServer,
+  type CorsOrigins,
   type ExpressServer,
 } from "./http/express-server.js";
 import { createExpressUseCaseRouter } from "./http/express-use-case-router.js";
@@ -39,6 +40,7 @@ const APP_EVENT_TYPES: AppEvent["type"][] = [
 export type BackendOptions = {
   port?: number;
   host?: string;
+  corsOrigins?: CorsOrigins;
 };
 
 /**
@@ -127,6 +129,9 @@ export function createBackend(options: BackendOptions = {}): Backend {
     },
     port: options.port ?? 3000,
     host: options.host ?? "127.0.0.1",
+    ...(options.corsOrigins === undefined
+      ? {}
+      : { corsOrigins: options.corsOrigins }),
   });
 
   return { server };

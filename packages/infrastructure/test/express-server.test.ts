@@ -125,4 +125,69 @@ describe("createExpressServer", () => {
     await server.start();
     expect(server.getHost()).toBe("localhost");
   });
+
+  it("allows cross-origin preflight and POST by default", async () => {
+    server = createExpressServer({
+      routers: { "/": pingRouter() },
+      port: 0,
+    });
+    await server.start();
+    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+    const origin = "http://localhost:5173";
+
+    const preflight = await fetch(url, {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    });
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("access-control-allow-origin")).toBe("*");
+    expect(preflight.headers.get("access-control-allow-methods")).toMatch(
+      /POST/,
+    );
+    expect(preflight.headers.get("access-control-allow-headers")).toMatch(
+      /content-type/i,
+    );
+
+    const get = await fetch(url, { headers: { Origin: origin } });
+    expect(get.status).toBe(204);
+    expect(get.headers.get("access-control-allow-origin")).toBe("*");
+  });
+
+  it("reflects only allowlisted origins", async () => {
+    const allowed = "http://ui.example";
+    server = createExpressServer({
+      routers: { "/": pingRouter() },
+      port: 0,
+      corsOrigins: [allowed],
+    });
+    await server.start();
+    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+
+    const ok = await fetch(url, { headers: { Origin: allowed } });
+    expect(ok.headers.get("access-control-allow-origin")).toBe(allowed);
+
+    const denied = await fetch(url, {
+      headers: { Origin: "http://evil.example" },
+    });
+    expect(denied.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("omits CORS headers when the allowlist is empty", async () => {
+    server = createExpressServer({
+      routers: { "/": pingRouter() },
+      port: 0,
+      corsOrigins: [],
+    });
+    await server.start();
+    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+    const res = await fetch(url, {
+      headers: { Origin: "http://localhost:5173" },
+    });
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
 });

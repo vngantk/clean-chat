@@ -1,4 +1,9 @@
-export { createExpressServer, type ExpressServer, type ExpressServerDeps } from "./express-server.js";
+export {
+  createExpressServer,
+  type CorsOrigins,
+  type ExpressServer,
+  type ExpressServerDeps,
+} from "./express-server.js";
 export { createExpressEventSubscriptionRouter } from "./express-event-subscription-router.js";
 export {
   createExpressUseCaseRouter,

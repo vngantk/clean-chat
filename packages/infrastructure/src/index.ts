@@ -37,6 +37,7 @@ export {
   createExpressEventSubscriptionRouter,
   createExpressServer,
   createExpressUseCaseRouter,
+  type CorsOrigins,
   type ExpressServer,
   type ExpressServerDeps,
   type HttpUseCase,

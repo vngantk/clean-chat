@@ -1,11 +1,24 @@
 import { type Server } from "node:http";
+import cors from "cors";
 import express, { type Express, type Router } from "express";
 import type { Lifecycle } from "./lifecycle.js";
+
+/**
+ * Browser origins allowed to call this server. `"*"` (the default) allows
+ * any `Origin`. An empty list disables CORS headers (same-origin only).
+ */
+export type CorsOrigins = "*" | readonly string[];
 
 export type ExpressServerDeps = {
   routers: Record<string, Router>;
   port: number;
   host?: string;
+  /**
+   * CORS allowlist. Default `"*"`. Restrict to the UI origin(s) when they
+   * are known. Credentials/cookies are not enabled (sessions are not
+   * cookie-based yet).
+   */
+  corsOrigins?: CorsOrigins;
 };
 
 /**
@@ -26,13 +39,22 @@ export type ExpressServer = Lifecycle & {
 };
 
 /**
- * Builds an Express app, mounts each router at its map key
+ * Builds an Express app, applies CORS, mounts each router at its map key
  * (`app.use(path, router)`), and listens on `port` / `host` in
  * {@link Lifecycle.start}.
  */
 export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   const host = deps.host ?? "127.0.0.1";
   const app = express();
+  app.use(
+    cors({
+      origin: corsOrigin(deps.corsOrigins),
+      methods: ["GET", "POST"],
+      allowedHeaders: ["Content-Type"],
+      optionsSuccessStatus: 204,
+      maxAge: 600,
+    }),
+  );
   for (const [path, router] of Object.entries(deps.routers)) {
     app.use(path === "" ? "/" : path, router);
   }
@@ -107,4 +129,16 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
       return httpServer;
     },
   };
+}
+
+function corsOrigin(
+  origins: CorsOrigins | undefined,
+): boolean | string | string[] {
+  if (origins === undefined || origins === "*") {
+    return "*";
+  }
+  if (origins.length === 0) {
+    return false;
+  }
+  return [...origins];
 }
