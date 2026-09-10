@@ -6,6 +6,7 @@ import {
   query,
   requiredBoolean,
   requiredString,
+  requiredUnixTime,
 } from "./session.js";
 
 export function createSqlPresenceRepository(): PresenceRepository {
@@ -13,7 +14,7 @@ export function createSqlPresenceRepository(): PresenceRepository {
     async listByChannel(tx, channelId) {
       const rows = await query(
         tx,
-        `SELECT channel_id, user_id, session_id, online, name
+        `SELECT channel_id, user_id, session_id, online, name, last_seen_at
          FROM presence WHERE channel_id = ?`,
         [channelId],
       );
@@ -23,7 +24,7 @@ export function createSqlPresenceRepository(): PresenceRepository {
     async get(tx, channelId, sessionId) {
       const rows = await query(
         tx,
-        `SELECT channel_id, user_id, session_id, online, name
+        `SELECT channel_id, user_id, session_id, online, name, last_seen_at
          FROM presence WHERE channel_id = ? AND session_id = ?`,
         [channelId, sessionId],
       );
@@ -35,12 +36,13 @@ export function createSqlPresenceRepository(): PresenceRepository {
       await execute(
         tx,
         `
-        INSERT INTO presence (channel_id, session_id, user_id, online, name)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO presence (channel_id, session_id, user_id, online, name, last_seen_at)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT (channel_id, session_id) DO UPDATE SET
           user_id = excluded.user_id,
           online = excluded.online,
-          name = excluded.name
+          name = excluded.name,
+          last_seen_at = excluded.last_seen_at
         `,
         [
           presence.channelId,
@@ -48,6 +50,7 @@ export function createSqlPresenceRepository(): PresenceRepository {
           presence.userId,
           presence.online ? 1 : 0,
           presence.name,
+          presence.lastSeenAt,
         ],
       );
     },
@@ -78,6 +81,26 @@ export function createSqlPresenceRepository(): PresenceRepository {
       }
       return left;
     },
+
+    async removeExpired(tx, now, expireMs) {
+      const cutoff = now - expireMs;
+      const rows = await query(
+        tx,
+        `
+        DELETE FROM presence
+        WHERE last_seen_at <= ?
+        RETURNING channel_id, online
+        `,
+        [cutoff],
+      );
+      const left: ChannelId[] = [];
+      for (const row of rows) {
+        if (requiredBoolean(row, "online")) {
+          left.push(requiredString(row, "channel_id"));
+        }
+      }
+      return left;
+    },
   };
 }
 
@@ -88,5 +111,6 @@ function toPresence(row: Row): Presence {
     sessionId: requiredString(row, "session_id"),
     online: requiredBoolean(row, "online"),
     name: requiredString(row, "name"),
+    lastSeenAt: requiredUnixTime(row, "last_seen_at"),
   };
 }

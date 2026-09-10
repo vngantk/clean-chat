@@ -3,9 +3,10 @@ import { compareChannels } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { ChannelRepository } from "../repositories/channel-repository.js";
 import type { UnitOfWork } from "../transaction.js";
+import { requireUser } from "./require-user.js";
 
 /**
- * Sidebar channel list. Signed out → `[]`. Signed in → `general` first,
+ * Sidebar channel list. Auth required. Signed in → `general` first,
  * then alphabetical. One {@link UnitOfWork.run} for a consistent snapshot.
  */
 export function createListChannels(deps: {
@@ -16,10 +17,7 @@ export function createListChannels(deps: {
   return {
     name: ListChannelsName,
     async execute() {
-      const user = await deps.auth.currentUser();
-      if (user === null) {
-        return [];
-      }
+      await requireUser(deps.auth);
       const channels = await deps.uow.run((tx) => deps.channels.list(tx));
       return [...channels].sort(compareChannels);
     },

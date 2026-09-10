@@ -1,5 +1,8 @@
 import type { AppEvent, EventSubscriber } from "@clean-chat/core";
-import { readHttpErrorMessage } from "./http-error.js";
+import {
+  isSseAuthFailure,
+  throwHttpError,
+} from "./http-error.js";
 
 /** First reconnect wait; doubles each attempt up to {@link SSE_RECONNECT_MAX_MS}. */
 export const SSE_RECONNECT_BASE_MS = 500;
@@ -42,7 +45,7 @@ async function readSse(
     headers: getHeaders?.() ?? {},
   });
   if (!res.ok) {
-    throw new Error(await readHttpErrorMessage(res));
+    await throwHttpError(res);
   }
   if (!res.body) {
     throw new Error("SSE response has no body");
@@ -114,6 +117,8 @@ export type HttpEventSubscriberOptions = {
    * {@link SSE_RECONNECT_MAX_MS}.
    */
   reconnectDelayMs?: number;
+  /** Called when `GET` returns 401/403. The stream does not reconnect. */
+  onUnauthorized?: () => void;
 };
 
 /**
@@ -122,12 +127,17 @@ export type HttpEventSubscriberOptions = {
  * type-filtered handler on that shared connection so a tab does not open
  * four long-lived HTTP/1.1 sockets (the browser allows six per origin).
  * `Unsubscribe` of the last handler aborts the stream. Dropped streams
- * reconnect with backoff until every handler is gone.
+ * reconnect with backoff until every handler is gone. {@link close}
+ * aborts immediately (sign-out / 401).
  */
+export type HttpEventSubscriber = EventSubscriber & {
+  close(): void;
+};
+
 export function createHttpEventSubscriber(
   baseUrl: string,
   options?: HttpEventSubscriberOptions,
-): EventSubscriber {
+): HttpEventSubscriber {
   const root = baseUrl.replace(/\/+$/, "");
   const handlers = new Map<AppEvent["type"], Set<(event: AppEvent) => void>>();
   let stream: AbortController | undefined;
@@ -173,6 +183,11 @@ export function createHttpEventSubscriber(
           if (ac.signal.aborted || isAbortError(err)) {
             return;
           }
+          if (isSseAuthFailure(err)) {
+            stopStream();
+            options?.onUnauthorized?.();
+            return;
+          }
           attempt += 1;
         }
         const delay =
@@ -205,6 +220,10 @@ export function createHttpEventSubscriber(
           stopStream();
         }
       };
+    },
+    close() {
+      handlers.clear();
+      stopStream();
     },
   };
 }

@@ -1,6 +1,7 @@
 import { presenceChanged } from "@clean-chat/core";
 import { HeartbeatPresenceName, type HeartbeatPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
+import type { Clock } from "../clock.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
 import type { UnitOfWork } from "../transaction.js";
@@ -11,11 +12,13 @@ import { requireUser } from "./require-user.js";
  * room: other channels for this `sessionId` are cleared. Publishes
  * `presence-changed` after commit when this room’s membership changes or
  * when the tab leaves another room — not on every heartbeat tick.
+ * `lastSeenAt` is refreshed so the server TTL can drop crashed tabs.
  */
 export function createHeartbeatPresence(deps: {
   auth: AuthPort;
   uow: UnitOfWork;
   presence: PresenceRepository;
+  clock: Clock;
   events: EventPublisher;
 }): HeartbeatPresence {
   return {
@@ -39,6 +42,7 @@ export function createHeartbeatPresence(deps: {
           sessionId: input.sessionId,
           online: true,
           name: user.name,
+          lastSeenAt: deps.clock.now(),
         });
         return {
           joined:

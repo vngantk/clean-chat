@@ -41,5 +41,19 @@ export function createInMemoryPresenceRepository(
       }
       return left;
     },
+
+    async removeExpired(_tx, now, expireMs) {
+      const left: ChannelId[] = [];
+      for (const [key, row] of store.presence) {
+        if (now - row.lastSeenAt < expireMs) {
+          continue;
+        }
+        store.presence.delete(key);
+        if (row.online) {
+          left.push(row.channelId);
+        }
+      }
+      return left;
+    },
   };
 }

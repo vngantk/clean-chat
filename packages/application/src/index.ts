@@ -38,6 +38,7 @@ export {
   createDeleteOwnMessage,
   createDisconnectPresence,
   createEnsureGeneralChannel,
+  createExpireStalePresence,
   createGetCurrentUser,
   createHeartbeatPresence,
   createListChannels,

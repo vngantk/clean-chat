@@ -27,7 +27,7 @@ import {
 } from "./doubles.js";
 
 describe("createListMessages", () => {
-  it("returns [] when signed out", async () => {
+  it("throws when signed out", async () => {
     const messages = mockMessages();
     const uow = mockUow();
     await expect(
@@ -36,7 +36,7 @@ describe("createListMessages", () => {
         uow,
         messages,
       }).execute({ channelId: "ch-1" }),
-    ).resolves.toEqual([]);
+    ).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
     expect(uow.run).not.toHaveBeenCalled();
   });
 

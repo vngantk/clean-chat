@@ -13,14 +13,31 @@ export const DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN = 16;
 export type ExpressEventSubscriptionRouterOptions = {
   /** When false, the stream is not opened (401). */
   authorize?: (req: Request) => boolean | Promise<boolean>;
-  /** Key for the connection cap (the bearer token). */
+  /** Key for the connection cap and session checks (the bearer token). */
   connectionKey?: (req: Request) => string | null;
   /** Max open streams per {@link connectionKey}. Omitted → no cap. */
   maxConnectionsPerKey?: number;
+  /**
+   * Re-checked on each publish. When false, the stream is ended (sign-out
+   * or session TTL). {@link connectionKey} must be set.
+   */
+  isSessionActive?: (key: string) => boolean;
 };
 
-function writeSseFrame(res: Response, event: AppEvent): void {
-  res.write(`data: ${JSON.stringify(event)}\n\n`);
+export type ExpressEventSubscriptionRouter = Router & {
+  /** End every open SSE stream for this connection key (revoked token). */
+  closeConnectionsForKey(key: string): void;
+};
+
+function writeSseFrame(res: Response, event: AppEvent): boolean {
+  if (res.writableEnded || res.destroyed) {
+    return false;
+  }
+  try {
+    return res.write(`data: ${JSON.stringify(event)}\n\n`);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -36,10 +53,21 @@ export function createExpressEventSubscriptionRouter(
   eventTypes: readonly AppEvent["type"][],
   subscriber: EventSubscriber,
   options?: ExpressEventSubscriptionRouterOptions,
-): Router {
+): ExpressEventSubscriptionRouter {
   const router = express.Router();
   const max = options?.maxConnectionsPerKey;
   const counts = new Map<string, number>();
+  const connections = new Map<string, Set<() => void>>();
+
+  function closeConnectionsForKey(key: string): void {
+    const set = connections.get(key);
+    if (set === undefined) {
+      return;
+    }
+    for (const close of [...set]) {
+      close();
+    }
+  }
 
   const tryOpen = async (
     req: Request,
@@ -51,8 +79,8 @@ export function createExpressEventSubscriptionRouter(
       return;
     }
 
+    const key = options?.connectionKey?.(req) ?? null;
     if (max !== undefined) {
-      const key = options?.connectionKey?.(req) ?? null;
       if (key === null) {
         sendHttpError(res, 401, NOT_AUTHENTICATED_ERROR);
         return;
@@ -63,14 +91,6 @@ export function createExpressEventSubscriptionRouter(
         return;
       }
       counts.set(key, n + 1);
-      req.on("close", () => {
-        const current = counts.get(key) ?? 0;
-        if (current <= 1) {
-          counts.delete(key);
-        } else {
-          counts.set(key, current - 1);
-        }
-      });
     }
 
     req.socket.setTimeout(0);
@@ -79,16 +99,73 @@ export function createExpressEventSubscriptionRouter(
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const unsubs: Unsubscribe[] = types.map((eventType) =>
-      subscriber.subscribe(eventType, (event) => {
-        writeSseFrame(res, event);
-      }),
-    );
-    req.on("close", () => {
+    let closed = false;
+    const unsubs: Unsubscribe[] = [];
+
+    const closeStream = (): void => {
+      if (closed) {
+        return;
+      }
+      closed = true;
       for (const unsubscribe of unsubs) {
         unsubscribe();
       }
-    });
+      unsubs.length = 0;
+      if (key !== null) {
+        const set = connections.get(key);
+        if (set !== undefined) {
+          set.delete(closeStream);
+          if (set.size === 0) {
+            connections.delete(key);
+          }
+        }
+        if (max !== undefined) {
+          const current = counts.get(key) ?? 0;
+          if (current <= 1) {
+            counts.delete(key);
+          } else {
+            counts.set(key, current - 1);
+          }
+        }
+      }
+      if (!res.writableEnded && !res.destroyed) {
+        res.end();
+      }
+    };
+
+    if (key !== null) {
+      let set = connections.get(key);
+      if (set === undefined) {
+        set = new Set();
+        connections.set(key, set);
+      }
+      set.add(closeStream);
+    }
+
+    for (const eventType of types) {
+      unsubs.push(
+        subscriber.subscribe(eventType, (event) => {
+          if (closed) {
+            return;
+          }
+          if (
+            key !== null &&
+            options?.isSessionActive !== undefined &&
+            !options.isSessionActive(key)
+          ) {
+            closeStream();
+            return;
+          }
+          if (!writeSseFrame(res, event)) {
+            closeStream();
+          }
+        }),
+      );
+    }
+
+    req.on("close", closeStream);
+    res.on("close", closeStream);
+    res.on("error", closeStream);
 
     res.flushHeaders();
   };
@@ -111,5 +188,5 @@ export function createExpressEventSubscriptionRouter(
     });
   }
 
-  return router;
+  return Object.assign(router, { closeConnectionsForKey });
 }

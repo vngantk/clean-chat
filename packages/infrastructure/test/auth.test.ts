@@ -105,4 +105,46 @@ describe("createInMemoryAuth", () => {
     await expect(auth.currentUser()).resolves.toBeNull();
     expect(store.users.get(user.id)).toEqual(user);
   });
+
+  it("expires sessions after the TTL", async () => {
+    let now = 1_000;
+    const store = createInMemoryStore();
+    const auth = createInMemoryAuth({
+      users: createMemoryAuthUsers(store),
+      ids: createRandomIdGenerator(),
+      clock: { now: () => now },
+      sessionTtlMs: 100,
+      sessionSweepMs: 0,
+    });
+    const user = await auth.signUp("ada@example.com", password, "Ada");
+    await expect(auth.currentUser()).resolves.toEqual(user);
+    now = 1_100;
+    await expect(auth.currentUser()).resolves.toBeNull();
+    auth.stop();
+  });
+
+  it("evicts the oldest session when the per-user cap is reached", async () => {
+    const store = createInMemoryStore();
+    const auth = createInMemoryAuth({
+      users: createMemoryAuthUsers(store),
+      ids: createRandomIdGenerator(),
+      maxSessionsPerUser: 1,
+      sessionSweepMs: 0,
+    });
+    const firstToken = await runWithSessionContext(null, async () => {
+      await auth.signUp("ada@example.com", password, "Ada");
+      return getIssuedToken();
+    });
+    const revoked: string[] = [];
+    auth.onSessionRevoked((token) => {
+      revoked.push(token);
+    });
+    await runWithSessionContext(null, async () => {
+      await auth.signIn("ada@example.com", password);
+    });
+    expect(firstToken).toBeTruthy();
+    expect(revoked).toEqual([firstToken]);
+    expect(auth.hasSession(firstToken ?? "")).toBe(false);
+    auth.stop();
+  });
 });

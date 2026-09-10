@@ -26,12 +26,12 @@ export function TypingIndicator({
   viewerId,
 }: TypingIndicatorProps) {
   const client = useClient();
-  const typing = useLiveQuery(
+  const query = useLiveQuery(
     () => client.listTyping.execute({ channelId }),
     "typing-changed",
     channelId,
   );
-  const others = useFreshTyping(typing, viewerId);
+  const others = useFreshTyping(query.data, viewerId);
 
   if (others.length === 0) {
     return <div className="h-6 px-4" />;

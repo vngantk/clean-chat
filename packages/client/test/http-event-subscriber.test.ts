@@ -215,4 +215,45 @@ describe("createHttpEventSubscriber", () => {
     unsubscribeA();
     unsubscribeB();
   });
+
+  it("stops reconnecting after SSE 401 and notifies", async () => {
+    const { default: express } = await import("express");
+    const app = express();
+    let connections = 0;
+    app.get("/", (_req, res) => {
+      connections += 1;
+      res.status(401).json({ error: "Not authenticated" });
+    });
+    const listening = await new Promise<import("node:http").Server>(
+      (resolve, reject) => {
+        const s = app.listen(0, "127.0.0.1", () => resolve(s));
+        s.once("error", reject);
+      },
+    );
+    const addr = listening.address();
+    if (addr === null || typeof addr === "string") {
+      throw new Error("expected a TCP port");
+    }
+    let unauthorized = 0;
+    const client = createHttpEventSubscriber(
+      `http://127.0.0.1:${String(addr.port)}`,
+      {
+        reconnectDelayMs: 20,
+        onUnauthorized: () => {
+          unauthorized += 1;
+        },
+      },
+    );
+    const unsubscribe = client.subscribe("channel-list-changed", () => {
+      // The 401 body is not an event.
+    });
+    await waitFor(() => unauthorized === 1);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(connections).toBe(1);
+    unsubscribe();
+    await new Promise<void>((resolve, reject) => {
+      listening.closeAllConnections();
+      listening.close((err) => (err ? reject(err) : resolve()));
+    });
+  });
 });

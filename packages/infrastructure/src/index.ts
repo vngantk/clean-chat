@@ -31,6 +31,12 @@ export {
   createSystemClock,
   EMAIL_TAKEN_ERROR,
   INVALID_CREDENTIALS_ERROR,
+  MAX_SESSIONS,
+  MAX_SESSIONS_PER_USER,
+  SESSION_SWEEP_MS,
+  SESSION_TTL_MS,
+  type InMemoryAuth,
+  type InMemoryAuthOptions,
   type InMemoryEventBus,
   type InMemoryStore,
 } from "./memory/index.js";

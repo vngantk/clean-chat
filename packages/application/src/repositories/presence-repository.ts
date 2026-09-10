@@ -2,6 +2,7 @@ import type {
   ChannelId,
   Presence,
   SessionId,
+  UnixTimeMs,
 } from "@clean-chat/core/domain";
 import type { TransactionContext } from "../transaction.js";
 
@@ -40,5 +41,17 @@ export interface PresenceRepository {
     tx: TransactionContext,
     sessionId: SessionId,
     keepChannelId: ChannelId,
+  ): Promise<ChannelId[]>;
+
+  /**
+   * Delete rows whose `lastSeenAt` is at least {@link expireMs} before
+   * {@link now}. Used by list-time cleanup and the presence sweeper.
+   *
+   * @returns Channel ids that had an online row removed.
+   */
+  removeExpired(
+    tx: TransactionContext,
+    now: UnixTimeMs,
+    expireMs: number,
   ): Promise<ChannelId[]>;
 }

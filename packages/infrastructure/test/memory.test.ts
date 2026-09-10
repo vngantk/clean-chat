@@ -115,6 +115,7 @@ describe("in-memory persistence", () => {
       sessionId: "sess-1",
       online: true,
       name: user.name,
+      lastSeenAt: 1,
     };
     await uow.run(async (tx) => {
       await presence.put(tx, row);
@@ -136,6 +137,7 @@ describe("in-memory persistence", () => {
         sessionId: sess,
         online: true,
         name: user.name,
+        lastSeenAt: 1,
       });
       await presence.put(tx, {
         channelId: "ch-2",
@@ -143,6 +145,7 @@ describe("in-memory persistence", () => {
         sessionId: sess,
         online: true,
         name: user.name,
+        lastSeenAt: 1,
       });
     });
     const left = await uow.run((tx) =>
@@ -167,6 +170,64 @@ describe("in-memory persistence", () => {
     ).rejects.toThrow("boom");
     await uow.run(async (tx) => {
       await expect(channels.list(tx)).resolves.toEqual([]);
+    });
+  });
+
+  it("does not rewind a committed run when a later concurrent run throws", async () => {
+    const { store, uow, messages } = createInMemoryPersistence();
+    store.users.set(user.id, user);
+
+    const first = uow.run(async (tx) => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await messages.insert(tx, {
+        id: "m1",
+        channelId: "ch-1",
+        authorId: user.id,
+        body: "kept",
+        createdAt: 1,
+      });
+    });
+    const second = uow.run(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      throw new Error("fail");
+    });
+
+    await first;
+    await expect(second).rejects.toThrow("fail");
+
+    const listed = await uow.run((tx) =>
+      messages.listLatestByChannel(tx, "ch-1", 50),
+    );
+    expect(listed.map((m) => m.id)).toEqual(["m1"]);
+  });
+
+  it("deletes presence rows past the lastSeenAt TTL", async () => {
+    const { uow, presence } = createInMemoryPersistence();
+    await uow.run(async (tx) => {
+      await presence.put(tx, {
+        channelId: "ch-1",
+        userId: user.id,
+        sessionId: "fresh",
+        online: true,
+        name: user.name,
+        lastSeenAt: 100,
+      });
+      await presence.put(tx, {
+        channelId: "ch-1",
+        userId: user.id,
+        sessionId: "stale",
+        online: true,
+        name: user.name,
+        lastSeenAt: 50,
+      });
+    });
+    const left = await uow.run((tx) => presence.removeExpired(tx, 80, 20));
+    expect(left).toEqual(["ch-1"]);
+    await uow.run(async (tx) => {
+      await expect(presence.get(tx, "ch-1", "fresh")).resolves.toMatchObject({
+        sessionId: "fresh",
+      });
+      await expect(presence.get(tx, "ch-1", "stale")).resolves.toBeNull();
     });
   });
 });

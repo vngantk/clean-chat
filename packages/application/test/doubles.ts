@@ -107,6 +107,7 @@ export function mockPresence(
     put: vi.fn(async () => undefined),
     remove: vi.fn(async () => undefined),
     removeSessionFromOtherChannels: vi.fn(async () => []),
+    removeExpired: vi.fn(async () => []),
     ...overrides,
   };
 }
@@ -140,6 +141,7 @@ export function aPresence(overrides: Partial<Presence> = {}): Presence {
     sessionId: "sess-1",
     online: true,
     name: user.name,
+    lastSeenAt: 1_000_000,
     ...overrides,
   };
 }

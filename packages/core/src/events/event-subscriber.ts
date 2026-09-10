@@ -15,4 +15,10 @@ export interface EventSubscriber {
     type: T,
     handler: (event: Extract<AppEvent, { type: T }>) => void,
   ): Unsubscribe;
+
+  /**
+   * Drop every handler and abort the transport (HTTP SSE). Safe when
+   * already closed. In-memory adapters may no-op.
+   */
+  close?(): void;
 }

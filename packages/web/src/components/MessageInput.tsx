@@ -4,6 +4,7 @@ import { TYPING_DEBOUNCE_MS, type ChannelId } from "@clean-chat/core/domain";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useClient } from "@/lib/client-context";
+import { errorMessage } from "@/lib/error-message";
 
 /**
  * Props for the composer at the bottom of a channel.
@@ -18,13 +19,15 @@ export interface MessageInputProps {
  *
  * Typing is not sent on every keystroke: {@link scheduleTyping} waits
  * {@link TYPING_DEBOUNCE_MS}, then calls `upsert-typing`. Send / blur /
- * unmount call `clear-typing`.
+ * unmount call `clear-typing`. The draft stays until send succeeds.
  *
  * @param props {@link MessageInputProps}
  */
 export function MessageInput({ channelId }: MessageInputProps) {
   const client = useClient();
   const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
   const timeoutRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -45,46 +48,58 @@ export function MessageInput({ channelId }: MessageInputProps) {
   }
 
   /**
-   * Send the current draft and clear the typing row.
+   * Send the current draft after the server accepts it, then clear typing.
    *
    * @param event Form submit from the composer.
    */
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     const text = body.trim();
-    if (!text) {
+    if (!text || sending) {
       return;
     }
-    setBody("");
-    window.clearTimeout(timeoutRef.current);
-    await Promise.all([
-      client.sendMessage.execute({ channelId, body: text }),
-      client.clearTyping.execute({ channelId }),
-    ]);
+    setSending(true);
+    setError(undefined);
+    try {
+      await client.sendMessage.execute({ channelId, body: text });
+      setBody("");
+      window.clearTimeout(timeoutRef.current);
+      await client.clearTyping.execute({ channelId });
+    } catch (err) {
+      setError(errorMessage(err, "Could not send message."));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
     <form
       onSubmit={(event) => void onSubmit(event)}
-      className="flex gap-2 border-t p-3"
+      className="flex flex-col gap-2 border-t p-3"
     >
-      <Input
-        value={body}
-        onChange={(event) => {
-          setBody(event.target.value);
-          scheduleTyping();
-        }}
-        onBlur={() => {
-          window.clearTimeout(timeoutRef.current);
-          void client.clearTyping.execute({ channelId });
-        }}
-        placeholder="Message this channel"
-        autoComplete="off"
-      />
-      <Button type="submit" disabled={!body.trim()}>
-        <Send />
-        Send
-      </Button>
+      <div className="flex gap-2">
+        <Input
+          value={body}
+          onChange={(event) => {
+            setBody(event.target.value);
+            scheduleTyping();
+          }}
+          onBlur={() => {
+            window.clearTimeout(timeoutRef.current);
+            void client.clearTyping.execute({ channelId });
+          }}
+          placeholder="Message this channel"
+          autoComplete="off"
+          disabled={sending}
+        />
+        <Button type="submit" disabled={!body.trim() || sending}>
+          <Send />
+          Send
+        </Button>
+      </div>
+      {error ? (
+        <p className="text-xs text-destructive">{error}</p>
+      ) : null}
     </form>
   );
 }

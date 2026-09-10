@@ -20,13 +20,13 @@ import {
 } from "./doubles.js";
 
 describe("createListChannels", () => {
-  it("returns [] when signed out without touching persistence", async () => {
+  it("throws when signed out without touching persistence", async () => {
     const auth = mockAuth(null);
     const uow = mockUow();
     const channels = mockChannels();
     await expect(
       createListChannels({ auth, uow, channels }).execute(),
-    ).resolves.toEqual([]);
+    ).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
     expect(uow.run).not.toHaveBeenCalled();
   });
 

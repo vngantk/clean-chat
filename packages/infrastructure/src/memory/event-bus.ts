@@ -10,6 +10,8 @@ export type InMemoryEventBus = EventPublisher & EventSubscriber;
 /**
  * Same object for both ports. Delivery is synchronous inside `publish`.
  * There is no replay: a handler only sees events published after subscribe.
+ * A throwing handler is isolated so one subscriber cannot fail the publisher
+ * after a use case has already committed.
  */
 export function createInMemoryEventBus(): InMemoryEventBus {
   const handlers = new Map<AppEvent["type"], Set<(event: AppEvent) => void>>();
@@ -21,7 +23,11 @@ export function createInMemoryEventBus(): InMemoryEventBus {
         return;
       }
       for (const handler of Array.from(set)) {
-        handler(event);
+        try {
+          handler(event);
+        } catch {
+          // Isolate delivery so a dead SSE client cannot 500 a committed write.
+        }
       }
     },
 

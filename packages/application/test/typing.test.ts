@@ -3,6 +3,7 @@ import { TYPING_EXPIRE_MS } from "@clean-chat/core/domain";
 import { describe, expect, it } from "vitest";
 import { createClearTyping } from "../src/interactors/clear-typing.js";
 import { createListTyping } from "../src/interactors/list-typing.js";
+import { NOT_AUTHENTICATED_ERROR } from "../src/interactors/require-user.js";
 import { createUpsertTyping } from "../src/interactors/upsert-typing.js";
 import {
   aTyping,
@@ -18,7 +19,7 @@ import {
 const now = 10_000;
 
 describe("createListTyping", () => {
-  it("returns [] when signed out", async () => {
+  it("throws when signed out", async () => {
     const uow = mockUow();
     await expect(
       createListTyping({
@@ -27,7 +28,7 @@ describe("createListTyping", () => {
         typing: mockTyping(),
         clock: mockClock(now),
       }).execute({ channelId: "ch-1" }),
-    ).resolves.toEqual([]);
+    ).rejects.toThrow(NOT_AUTHENTICATED_ERROR);
     expect(uow.run).not.toHaveBeenCalled();
   });
 

@@ -4,6 +4,7 @@ import {
   createDeleteOwnMessage,
   createDisconnectPresence,
   createEnsureGeneralChannel,
+  createExpireStalePresence,
   createGetCurrentUser,
   createHeartbeatPresence,
   createListChannels,
@@ -43,13 +44,13 @@ import { createBearerSessionMiddleware } from "./http/bearer-session-middleware.
 import {
   createExpressServer,
   type CorsOrigins,
+  type ExpressServer,
 } from "./http/express-server.js";
 import {
   createExpressUseCaseRouter,
   type HttpUseCase,
 } from "./http/express-use-case-router.js";
 import type { AuthRateLimitOptions } from "./http/auth-rate-limit.js";
-import type {Lifecycle} from "./http/index.js";
 
 const APP_EVENT_TYPES: AppEvent["type"][] = [
   "channel-list-changed",
@@ -57,6 +58,9 @@ const APP_EVENT_TYPES: AppEvent["type"][] = [
   "typing-changed",
   "presence-changed",
 ];
+
+/** Sweep crashed presence rows a few times per expiry window. */
+const PRESENCE_SWEEP_MS = 5_000;
 
 export type PersistencePorts = {
   readonly uow: UnitOfWork;
@@ -87,14 +91,20 @@ export type ServerOptions = {
  * Wire persistence, auth, events, use cases, and HTTP.
  * Default bind is `127.0.0.1:3000`. Use `port: 0` in tests.
  */
-export function createServer(options: ServerOptions = {}): Lifecycle & { readonly port: number; readonly host: string; }{
+export function createServer(options: ServerOptions = {}): ExpressServer {
   const persistence = options.persistence ?? createInMemoryPersistence();
   const ids = createRandomIdGenerator();
   const clock = createSystemClock();
   const events = createInMemoryEventBus();
-  const auth = createInMemoryAuth({ users: persistence.authUsers, ids });
+  const auth = createInMemoryAuth({ users: persistence.authUsers, ids, clock });
   const { uow, channels, messages, typing, presence } = persistence;
   const validator = options.validator ?? createTypeBoxInputValidator();
+  const expirePresence = createExpireStalePresence({
+    uow,
+    presence,
+    clock,
+    events,
+  });
 
   const useCases = validateUseCases(validator, [
     createSignUp(auth),
@@ -102,20 +112,37 @@ export function createServer(options: ServerOptions = {}): Lifecycle & { readonl
     createSignOut(auth),
     createGetCurrentUser(auth),
     createListChannels({ auth, uow, channels }),
-    createEnsureGeneralChannel({auth, uow, channels, ids, events,}),
-    createCreateChannel({auth, uow, channels, ids, events,}),
+    createEnsureGeneralChannel({ auth, uow, channels, ids, events }),
+    createCreateChannel({ auth, uow, channels, ids, events }),
     createListMessages({ auth, uow, messages }),
-    createSendMessage({auth, uow, channels, messages, clock, ids, events,}),
-    createDeleteOwnMessage({auth, uow, messages, events,}),
+    createSendMessage({ auth, uow, channels, messages, clock, ids, events }),
+    createDeleteOwnMessage({ auth, uow, messages, events }),
     createListTyping({ auth, uow, typing, clock }),
-    createUpsertTyping({auth, uow, typing, clock, events,}),
+    createUpsertTyping({ auth, uow, typing, clock, events }),
     createClearTyping({ auth, uow, typing, events }),
-    createListPresence({ auth, uow, presence }),
-    createHeartbeatPresence({auth, uow, presence, events,}),
-    createDisconnectPresence({auth, uow, presence, events,}),
+    createListPresence({ auth, uow, presence, clock, events }),
+    createHeartbeatPresence({ auth, uow, presence, clock, events }),
+    createDisconnectPresence({ auth, uow, presence, events }),
   ]);
 
-  return createExpressServer({
+  const eventRouter = createExpressEventSubscriptionRouter(
+    APP_EVENT_TYPES,
+    events,
+    {
+      authorize: async () => (await auth.currentUser()) !== null,
+      connectionKey: () => getRequestToken(),
+      isSessionActive: (token) => auth.hasSession(token),
+      maxConnectionsPerKey:
+        options.sseMaxConnectionsPerToken ??
+        DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
+    },
+  );
+
+  auth.onSessionRevoked((token) => {
+    eventRouter.closeConnectionsForKey(token);
+  });
+
+  const http: ExpressServer = createExpressServer({
     routers: {
       "/use-cases": createExpressUseCaseRouter(useCases, {
         ...(options.jsonBodyLimit === undefined
@@ -125,17 +152,7 @@ export function createServer(options: ServerOptions = {}): Lifecycle & { readonl
           ? {}
           : { authRateLimit: options.authRateLimit }),
       }),
-      "/events": createExpressEventSubscriptionRouter(
-        APP_EVENT_TYPES,
-        events,
-        {
-          authorize: async () => (await auth.currentUser()) !== null,
-          connectionKey: () => getRequestToken(),
-          maxConnectionsPerKey:
-            options.sseMaxConnectionsPerToken ??
-            DEFAULT_SSE_MAX_CONNECTIONS_PER_TOKEN,
-        },
-      ),
+      "/events": eventRouter,
     },
     port: options.port ?? 3000,
     host: options.host ?? "127.0.0.1",
@@ -144,6 +161,41 @@ export function createServer(options: ServerOptions = {}): Lifecycle & { readonl
       ? {}
       : { corsOrigins: options.corsOrigins }),
   });
+
+  let presenceTimer: ReturnType<typeof setInterval> | undefined;
+
+  return {
+    async start() {
+      await http.start();
+      presenceTimer = setInterval(() => {
+        void expirePresence();
+      }, PRESENCE_SWEEP_MS);
+      presenceTimer.unref();
+    },
+    async stop() {
+      if (presenceTimer !== undefined) {
+        clearInterval(presenceTimer);
+        presenceTimer = undefined;
+      }
+      auth.stop();
+      await http.stop();
+    },
+    isRunning() {
+      return http.isRunning();
+    },
+    get port() {
+      return http.port;
+    },
+    get host() {
+      return http.host;
+    },
+    get app() {
+      return http.app;
+    },
+    get server() {
+      return http.server;
+    },
+  };
 }
 
 function validateUseCases(

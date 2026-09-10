@@ -26,16 +26,28 @@ export interface MessageListProps {
  */
 export function MessageList({ channelId, viewerId }: MessageListProps) {
   const client = useClient();
-  const messages = useLiveQuery(
+  const query = useLiveQuery(
     () => client.listMessages.execute({ channelId }),
     "message-list-changed",
     channelId,
   );
+  const messages = query.data;
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  if (messages === undefined && query.status === "error") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+        <p>{query.error ?? "Could not load messages."}</p>
+        <Button variant="outline" size="sm" onClick={() => query.retry()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   if (messages === undefined) {
     return (
@@ -50,6 +62,18 @@ export function MessageList({ channelId, viewerId }: MessageListProps) {
   return (
     <ScrollArea className="flex-1">
       <div className="flex flex-col gap-3 p-4">
+        {query.status === "error" ? (
+          <p className="text-xs text-destructive">
+            {query.error}{" "}
+            <button
+              type="button"
+              className="underline"
+              onClick={() => query.retry()}
+            >
+              Retry
+            </button>
+          </p>
+        ) : null}
         {messages.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No messages yet. Say hello — every signed-in client in this channel

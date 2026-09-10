@@ -56,10 +56,26 @@ function initials(name: string) {
  * @param props {@link PresencePileProps}
  */
 export function PresencePile({ channelId }: PresencePileProps) {
-  const presenceState = usePresence(channelId);
+  const query = usePresence(channelId);
+  const presenceState = query.data;
   const online = uniqueOnlineUsers(presenceState ?? []);
   const visible = online.slice(0, PRESENCE_FACEPILE_LIMIT);
   const extra = online.length - visible.length;
+
+  if (presenceState === undefined && query.status === "error") {
+    return (
+      <p className="text-xs text-muted-foreground">
+        {query.error ?? "Couldn’t load who’s here."}{" "}
+        <button
+          type="button"
+          className="underline"
+          onClick={() => query.retry()}
+        >
+          Retry
+        </button>
+      </p>
+    );
+  }
 
   if (presenceState === undefined) {
     return (

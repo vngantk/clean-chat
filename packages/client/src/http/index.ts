@@ -9,6 +9,7 @@ export {
   createHttpEventSubscriber,
   SSE_RECONNECT_BASE_MS,
   SSE_RECONNECT_MAX_MS,
+  type HttpEventSubscriber,
   type HttpEventSubscriberOptions,
 } from "./http-event-subscriber.js";
 export {
@@ -16,3 +17,10 @@ export {
   readIssuedBearerToken,
   type HttpUseCaseOptions,
 } from "./http-use-case.js";
+export {
+  HttpError,
+  isNotAuthenticatedError,
+  isSseAuthFailure,
+  NOT_AUTHENTICATED_ERROR,
+  readHttpErrorMessage,
+} from "./http-error.js";

@@ -44,6 +44,8 @@ export {
   PresenceSchema,
   SessionIdSchema,
   PRESENCE_FACEPILE_LIMIT,
+  PRESENCE_HEARTBEAT_MS,
+  PRESENCE_EXPIRE_MS,
   type Presence,
   type SessionId,
 } from "./presence/index.js";

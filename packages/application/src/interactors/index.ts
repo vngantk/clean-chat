@@ -16,5 +16,6 @@ export { createListTyping } from "./list-typing.js";
 export { createUpsertTyping } from "./upsert-typing.js";
 
 export { createDisconnectPresence } from "./disconnect-presence.js";
+export { createExpireStalePresence } from "./expire-stale-presence.js";
 export { createHeartbeatPresence } from "./heartbeat-presence.js";
 export { createListPresence } from "./list-presence.js";

@@ -53,11 +53,22 @@ export async function createSqlPersistence(
   const client = createClient({ url: normalizeUrl(url) });
   try {
     await client.executeMultiple(SCHEMA_SQL);
+    await ensurePresenceLastSeenAt(client);
   } catch (error) {
     client.close();
     throw error;
   }
   return persistenceFromClient(client);
+}
+
+async function ensurePresenceLastSeenAt(client: Client): Promise<void> {
+  const info = await client.execute("PRAGMA table_info(presence)");
+  const hasColumn = info.rows.some((row) => row.name === "last_seen_at");
+  if (!hasColumn) {
+    await client.execute(
+      "ALTER TABLE presence ADD COLUMN last_seen_at INTEGER NOT NULL DEFAULT 0",
+    );
+  }
 }
 
 function persistenceFromClient(client: Client): SqlPersistence {

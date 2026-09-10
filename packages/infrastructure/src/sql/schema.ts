@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS presence (
   user_id TEXT NOT NULL,
   online INTEGER NOT NULL,
   name TEXT NOT NULL,
+  last_seen_at INTEGER NOT NULL,
   PRIMARY KEY (channel_id, session_id)
 );
 

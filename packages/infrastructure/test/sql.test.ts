@@ -162,6 +162,7 @@ describe("sql persistence", () => {
       sessionId: "sess-1",
       online: true,
       name: user.name,
+      lastSeenAt: 1,
     };
     await uow.run(async (tx) => {
       await presence.put(tx, row);
@@ -184,6 +185,7 @@ describe("sql persistence", () => {
         sessionId: sess,
         online: true,
         name: user.name,
+        lastSeenAt: 1,
       });
       await presence.put(tx, {
         channelId: "ch-2",
@@ -191,6 +193,7 @@ describe("sql persistence", () => {
         sessionId: sess,
         online: true,
         name: user.name,
+        lastSeenAt: 1,
       });
       await presence.put(tx, {
         channelId: "ch-3",
@@ -198,6 +201,7 @@ describe("sql persistence", () => {
         sessionId: sess,
         online: false,
         name: user.name,
+        lastSeenAt: 1,
       });
     });
     const left = await uow.run((tx) =>

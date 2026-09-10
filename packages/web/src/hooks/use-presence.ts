@@ -1,11 +1,12 @@
 import type { Presence } from "@clean-chat/core/domain";
+import { PRESENCE_HEARTBEAT_MS } from "@clean-chat/core/domain";
 import { useEffect, useRef } from "react";
-import { useLiveQuery } from "@/hooks/use-live-query";
+import {
+  useLiveQuery,
+  type LiveQueryResult,
+} from "@/hooks/use-live-query";
 import { useClient } from "@/lib/client-context";
 import { tabSessionId } from "@/lib/session-id";
-
-/** Same interval as `@convex-dev/presence` (10s). */
-export const PRESENCE_HEARTBEAT_MS = 10_000;
 
 /**
  * Delay disconnect on effect cleanup so React StrictMode remounts do not
@@ -15,11 +16,22 @@ export const PRESENCE_HEARTBEAT_MS = 10_000;
 const PRESENCE_DISCONNECT_DELAY_MS = 250;
 
 /**
+ * Bumped on sign-out so StrictMode-delayed disconnects do not fire after
+ * the bearer is gone.
+ */
+let disconnectGeneration = 0;
+
+/** Skip pending delayed presence disconnects (call before `sign-out`). */
+export function cancelPendingPresenceDisconnects(): void {
+  disconnectGeneration += 1;
+}
+
+/**
  * Heartbeat this tab in `channelId`, list online rows, and disconnect on
  * unmount / channel change / `pagehide`. List updates on `presence-changed`
  * (join/leave), not on every tick.
  */
-export function usePresence(channelId: string): Presence[] | undefined {
+export function usePresence(channelId: string): LiveQueryResult<Presence[]> {
   const client = useClient();
   const disconnectTimersRef = useRef(new Map<string, number>());
   const previousChannelRef = useRef<string | undefined>(undefined);
@@ -34,6 +46,7 @@ export function usePresence(channelId: string): Presence[] | undefined {
     const timers = disconnectTimersRef.current;
     const previous = previousChannelRef.current;
     previousChannelRef.current = channelId;
+    const generation = disconnectGeneration;
 
     function cancelTimer(id: string) {
       const timer = timers.get(id);
@@ -77,6 +90,9 @@ export function usePresence(channelId: string): Presence[] | undefined {
       const leaving = channelId;
       const timer = window.setTimeout(() => {
         timers.delete(leaving);
+        if (generation !== disconnectGeneration) {
+          return;
+        }
         void client.disconnectPresence.execute({
           channelId: leaving,
           sessionId,

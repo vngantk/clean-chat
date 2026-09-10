@@ -11,6 +11,9 @@ export {
   createHttpClient,
   createHttpEventSubscriber,
   createHttpUseCase,
+  HttpError,
+  isNotAuthenticatedError,
+  NOT_AUTHENTICATED_ERROR,
   type HttpClientOptions,
   type TokenStore,
 } from "./http/index.js";

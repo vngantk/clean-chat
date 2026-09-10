@@ -65,6 +65,7 @@ export function createHttpClient(options: HttpClientOptions): Client {
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
   const tokenStore = options.tokenStore;
   let bearer: string | undefined = tokenStore?.get();
+  const authFailureHandlers = new Set<() => void>();
 
   function readBearer(): string | undefined {
     return tokenStore !== undefined ? tokenStore.get() : bearer;
@@ -73,6 +74,14 @@ export function createHttpClient(options: HttpClientOptions): Client {
   function writeBearer(token: string | undefined): void {
     bearer = token;
     tokenStore?.set(token);
+  }
+
+  function notifyAuthFailure(): void {
+    writeBearer(undefined);
+    eventSubscriber.close();
+    for (const handler of [...authFailureHandlers]) {
+      handler();
+    }
   }
 
   const httpOptions = {
@@ -88,7 +97,17 @@ export function createHttpClient(options: HttpClientOptions): Client {
         writeBearer(issued);
       }
     },
+    onUnauthorized: () => {
+      notifyAuthFailure();
+    },
   };
+
+  const eventSubscriber = createHttpEventSubscriber(`${baseUrl}/events`, {
+    getHeaders: httpOptions.getHeaders,
+    onUnauthorized: () => {
+      notifyAuthFailure();
+    },
+  });
 
   function httpUseCase<I, O, N extends string>(name: N): UseCase<I, O, N> {
     return createHttpUseCase(name, toUseCaseUrl(baseUrl, name), httpOptions);
@@ -102,8 +121,12 @@ export function createHttpClient(options: HttpClientOptions): Client {
     signOut: {
       name: SignOutName,
       async execute() {
-        await signOut.execute();
-        writeBearer(undefined);
+        try {
+          await signOut.execute();
+        } finally {
+          writeBearer(undefined);
+          eventSubscriber.close();
+        }
       },
     },
     getCurrentUser: httpUseCase(GetCurrentUserName),
@@ -119,8 +142,12 @@ export function createHttpClient(options: HttpClientOptions): Client {
     listPresence: httpUseCase(ListPresenceName),
     heartbeatPresence: httpUseCase(HeartbeatPresenceName),
     disconnectPresence: httpUseCase(DisconnectPresenceName),
-    eventSubscriber: createHttpEventSubscriber(`${baseUrl}/events`, {
-      getHeaders: httpOptions.getHeaders,
-    }),
+    eventSubscriber,
+    onAuthFailure(handler) {
+      authFailureHandlers.add(handler);
+      return () => {
+        authFailureHandlers.delete(handler);
+      };
+    },
   };
 }

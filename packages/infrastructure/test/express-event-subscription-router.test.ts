@@ -230,4 +230,57 @@ describe("createExpressEventSubscriptionRouter", () => {
       channelId: "ch-1",
     });
   });
+
+  it("ends the stream when the session is no longer active", async () => {
+    const mock = createMockSubscriber();
+    let active = true;
+    const app = express();
+    app.use(
+      createExpressEventSubscriptionRouter(
+        ["channel-list-changed"],
+        mock.subscriber,
+        {
+          connectionKey: () => "tok",
+          isSessionActive: () => active,
+        },
+      ),
+    );
+    const listening = await listen(app);
+    close = listening.close;
+    const res = await fetch(`${listening.origin}/channel-list-changed`);
+    expect(res.status).toBe(200);
+    active = false;
+    mock.emit({ type: "channel-list-changed" });
+    await waitFor(() => mock.count("channel-list-changed") === 0);
+    await res.body?.cancel();
+  });
+
+  it("closeConnectionsForKey ends open streams", async () => {
+    const mock = createMockSubscriber();
+    const app = express();
+    const router = createExpressEventSubscriptionRouter(
+      ["channel-list-changed"],
+      mock.subscriber,
+      { connectionKey: () => "tok" },
+    );
+    app.use(router);
+    const listening = await listen(app);
+    close = listening.close;
+    const res = await fetch(`${listening.origin}/channel-list-changed`);
+    expect(res.status).toBe(200);
+    expect(mock.count("channel-list-changed")).toBe(1);
+    router.closeConnectionsForKey("tok");
+    await waitFor(() => mock.count("channel-list-changed") === 0);
+    await res.body?.cancel();
+  });
+
+  it("does not throw from the publisher when writing to a closed stream", async () => {
+    const mock = createMockSubscriber();
+    const origin = await mount(["channel-list-changed"], mock.subscriber);
+    const res = await fetch(`${origin}/channel-list-changed`);
+    expect(res.status).toBe(200);
+    await res.body?.cancel();
+    await waitFor(() => mock.count("channel-list-changed") === 0);
+    expect(() => mock.emit({ type: "channel-list-changed" })).not.toThrow();
+  });
 });

@@ -107,4 +107,28 @@ describe("createHttpClient", () => {
     expect(stored).toBeUndefined();
     await expect(second.getCurrentUser.execute()).resolves.toBeNull();
   });
+
+  it("clears the local bearer even if sign-out fails", async () => {
+    server = createServer({ port: 0 });
+    await server.start();
+    const baseUrl = `http://${server.host}:${String(server.port)}`;
+    let stored: string | undefined;
+    const tokenStore = {
+      get: () => stored,
+      set: (token: string | undefined) => {
+        stored = token;
+      },
+    };
+    const client = createHttpClient({ baseUrl, tokenStore });
+    await client.signUp.execute({
+      email: "ada@example.com",
+      password: "password1",
+      name: "Ada",
+    });
+    expect(stored).toEqual(expect.any(String));
+    await server.stop();
+    server = undefined;
+    await expect(client.signOut.execute()).rejects.toThrow();
+    expect(stored).toBeUndefined();
+  });
 });

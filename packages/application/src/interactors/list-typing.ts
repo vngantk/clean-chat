@@ -4,9 +4,10 @@ import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
 import type { TypingRepository } from "../repositories/typing-repository.js";
 import type { UnitOfWork } from "../transaction.js";
+import { requireUser } from "./require-user.js";
 
 /**
- * Typing rows in a channel, excluding stale ones. Signed out → `[]`.
+ * Typing rows in a channel, excluding stale ones. Auth required.
  * The client hides the current user.
  */
 export function createListTyping(deps: {
@@ -18,10 +19,7 @@ export function createListTyping(deps: {
   return {
     name: ListTypingName,
     async execute(input) {
-      const user = await deps.auth.currentUser();
-      if (user === null) {
-        return [];
-      }
+      await requireUser(deps.auth);
       const now = deps.clock.now();
       const rows = await deps.uow.run((tx) =>
         deps.typing.listByChannel(tx, input.channelId),

@@ -63,6 +63,20 @@ describe("createInMemoryEventBus", () => {
     expect(b).toEqual([event]);
   });
 
+  it("does not fail publish when a handler throws", async () => {
+    const bus = createInMemoryEventBus();
+    const received: unknown[] = [];
+    bus.subscribe("channel-list-changed", () => {
+      throw new Error("dead subscriber");
+    });
+    bus.subscribe("channel-list-changed", (event) => {
+      received.push(event);
+    });
+
+    await expect(bus.publish(channelListChanged())).resolves.toBeUndefined();
+    expect(received).toEqual([{ type: "channel-list-changed" }]);
+  });
+
   it("does not replay events published before subscribe", async () => {
     const bus = createInMemoryEventBus();
     await bus.publish(channelListChanged());

@@ -3,9 +3,10 @@ import { MESSAGE_LIST_LIMIT } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { MessageRepository } from "../repositories/message-repository.js";
 import type { UnitOfWork } from "../transaction.js";
+import { requireUser } from "./require-user.js";
 
 /**
- * Latest 50 messages in a channel, oldest first. Signed out → `[]`.
+ * Latest 50 messages in a channel, oldest first. Auth required.
  */
 export function createListMessages(deps: {
   auth: AuthPort;
@@ -15,10 +16,7 @@ export function createListMessages(deps: {
   return {
     name: ListMessagesName,
     async execute(input) {
-      const user = await deps.auth.currentUser();
-      if (user === null) {
-        return [];
-      }
+      await requireUser(deps.auth);
       return deps.uow.run((tx) =>
         deps.messages.listLatestByChannel(
           tx,

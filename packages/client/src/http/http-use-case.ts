@@ -1,22 +1,27 @@
 import type { UseCase } from "@clean-chat/core/use-cases";
 import { parseBearerAuthorization } from "./bearer.js";
-import { readHttpErrorMessage } from "./http-error.js";
+import {
+  isNotAuthenticatedError,
+  throwHttpError,
+} from "./http-error.js";
 
 export type HttpUseCaseOptions = {
   /** Extra request headers (e.g. `Authorization`). */
   getHeaders?: () => Record<string, string>;
   /** Called on every completed response (used to capture a new bearer token). */
   onResponse?: (response: Response) => void;
+  /** Called when the server returns 401 `Not authenticated`. */
+  onUnauthorized?: () => void;
 };
 
 /**
  * Driving adapter: `POST` JSON `Input` to `url`, return JSON `Output`.
  * {@link name} is {@link UseCase.name} (HTTP path segment). Uses platform
  * `fetch` (Node 20+ and browsers). Server `void` Output is **204**; this
- * adapter yields `undefined`. Non-OK responses throw with the server
- * `{ error }` string (or `HTTP {status}` if the body is not that shape).
- * Requests use `keepalive: true` so `disconnect-presence` can finish during
- * `pagehide`.
+ * adapter yields `undefined`. Non-OK responses throw {@link HttpError}
+ * with the server `{ error }` string (or `HTTP {status}` if the body is
+ * not that shape). Requests use `keepalive: true` so `disconnect-presence`
+ * can finish during `pagehide`.
  */
 export function createHttpUseCase<Input, Output, Name extends string = string>(
   name: Name,
@@ -44,7 +49,14 @@ export function createHttpUseCase<Input, Output, Name extends string = string>(
         return undefined as Output;
       }
       if (!res.ok) {
-        throw new Error(await readHttpErrorMessage(res));
+        try {
+          await throwHttpError(res);
+        } catch (err) {
+          if (isNotAuthenticatedError(err)) {
+            options?.onUnauthorized?.();
+          }
+          throw err;
+        }
       }
       return (await res.json()) as Output;
     },

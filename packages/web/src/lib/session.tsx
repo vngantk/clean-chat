@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useClient } from "@/lib/client-context";
+import { errorMessage } from "@/lib/error-message";
 import { BEARER_STORAGE_KEY } from "@/lib/token-store";
 
 /**
@@ -18,7 +19,10 @@ export type Viewer = User | null | undefined;
 
 type SessionValue = {
   viewer: Viewer;
+  /** Set after a failed `get-current-user` that is not a signed-out response. */
+  sessionError: string | undefined;
   setViewer: (user: User | null) => void;
+  retry: () => void;
 };
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -26,18 +30,24 @@ const SessionContext = createContext<SessionValue | null>(null);
 /**
  * Resolve the current user once, then keep it in React state.
  * Another tab’s sign-out (`storage` on the bearer key) returns this tab
- * to the auth card.
+ * to the auth card. Network failures keep the previous viewer (or stay
+ * on loading) instead of looking signed out. 401 `Not authenticated`
+ * from later requests clears the session via {@link Client.onAuthFailure}.
  */
 export function SessionProvider({ children }: { children: ReactNode }) {
   const client = useClient();
   const [viewer, setViewerState] = useState<Viewer>(undefined);
+  const [sessionError, setSessionError] = useState<string | undefined>(
+    undefined,
+  );
 
   const refresh = useCallback(async () => {
     try {
       const user = await client.getCurrentUser.execute();
       setViewerState(user);
-    } catch {
-      setViewerState(null);
+      setSessionError(undefined);
+    } catch (err) {
+      setSessionError(errorMessage(err, "Can't reach the server."));
     }
   }, [client]);
 
@@ -54,13 +64,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    return client.onAuthFailure(() => {
+      setViewerState(null);
+      setSessionError(undefined);
+    });
+  }, [client]);
+
   const setViewer = useCallback((user: User | null) => {
     setViewerState(user);
+    setSessionError(undefined);
   }, []);
 
   const value = useMemo(
-    () => ({ viewer, setViewer }),
-    [viewer, setViewer],
+    () => ({ viewer, sessionError, setViewer, retry: () => void refresh() }),
+    [viewer, sessionError, setViewer, refresh],
   );
 
   return (

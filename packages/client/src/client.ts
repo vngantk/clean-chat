@@ -40,4 +40,9 @@ export type Client = {
   heartbeatPresence: HeartbeatPresence;
   disconnectPresence: DisconnectPresence;
   eventSubscriber: EventSubscriber;
+  /**
+   * Register a listener for a rejected bearer (401 `Not authenticated` or
+   * SSE 401/403). The stored token is already cleared. Returns unsubscribe.
+   */
+  onAuthFailure(handler: () => void): () => void;
 };
