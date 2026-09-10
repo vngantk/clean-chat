@@ -5,6 +5,7 @@ import { createInMemoryStore } from "./store.js";
 import { createInMemoryTypingRepository } from "./typing-repository.js";
 import { createInMemoryUnitOfWork } from "./unit-of-work.js";
 import { createInMemoryUserRepository } from "./user-repository.js";
+import { createMemoryAuthUsers } from "./auth.js";
 
 export type { InMemoryStore } from "./store.js";
 export { createInMemoryStore } from "./store.js";
@@ -20,6 +21,7 @@ export {
 } from "./event-bus.js";
 export {
   createInMemoryAuth,
+  createMemoryAuthUsers,
   EMAIL_TAKEN_ERROR,
   INVALID_CREDENTIALS_ERROR,
 } from "./auth.js";
@@ -39,5 +41,6 @@ export function createInMemoryPersistence() {
     users: createInMemoryUserRepository(store),
     typing: createInMemoryTypingRepository(store),
     presence: createInMemoryPresenceRepository(store),
+    authUsers: createMemoryAuthUsers(store),
   };
 }

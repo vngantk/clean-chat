@@ -14,5 +14,5 @@ Same product as convex-chat, different architecture. Read `AGENTS.md`. Behavior:
 - Use cases are `UseCase<Input, Output>` with a readonly `name` (HTTP path). One `execute` is one `UnitOfWork.run`. Persistence methods take `TransactionContext`. Publish `AppEvent` after commit. The UI listens with `EventSubscriber`. HTTP binds the actor from `Authorization: Bearer`. Input is checked by a pluggable `InputValidator` (default TypeBox `Value.Check`) before `execute`. Known errors map to 401/403/400; SSE requires a session.
 - Preserve JSDoc on public types, ports, and use-case functions.
 - Do not add DMs, file uploads, Clerk, Next.js, a router, or password-reset email unless requested
-- Persistence is in-memory (`@clean-chat/infrastructure` `src/memory/`). Do not pick a SQL database or auth library until that layer is being discussed. The UI is Vite + React in `@clean-chat/web`.
+- Persistence is in-memory (`src/memory/`) and SQLite (`src/sql/`) in `@clean-chat/infrastructure`. Do not add an auth library. The UI is Vite + React in `@clean-chat/web`.
 - Do not copy Convex `api.*`, `useQuery`, or `_id` / `_creationTime` into the domain

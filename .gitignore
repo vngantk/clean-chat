@@ -11,6 +11,9 @@ dist
 coverage
 *.tsbuildinfo
 *.local
+*.db
+*.db-wal
+*.db-shm
 .env
 .env.*
 !.env.example
