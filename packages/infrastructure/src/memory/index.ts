@@ -14,6 +14,10 @@ export { createInMemoryPresenceRepository } from "./presence-repository.js";
 export { createInMemoryTypingRepository } from "./typing-repository.js";
 export { createInMemoryUserRepository } from "./user-repository.js";
 export { createInMemoryUnitOfWork } from "./unit-of-work.js";
+export {
+  createInMemoryEventBus,
+  type InMemoryEventBus,
+} from "./event-bus.js";
 
 /**
  * One in-memory database plus repositories and a rolling-back unit of work.

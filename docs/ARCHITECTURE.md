@@ -62,7 +62,7 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 | `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
 | `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
-`EventPublisher` (application) and `EventSubscriber` (contracts) are implemented by the same infrastructure adapter later. Call `publish` **after** `UnitOfWork.run` commits.
+`EventPublisher` (application) and `EventSubscriber` (contracts) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
 
 Interactors implement every `UseCase` in `@clean-chat/contracts/use-cases`. Persistence is in-memory (`packages/infrastructure/src/memory/`).
 
@@ -120,7 +120,7 @@ execute
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
-| `packages/infrastructure/src/memory/` | In-memory `UnitOfWork` + repositories |
+| `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, and `createInMemoryEventBus` |
 | `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
@@ -134,4 +134,4 @@ execute
 
 ## Next
 
-In-memory `AuthPort`, `Clock`, `IdGenerator`, and `EventPublisher`, then a composition root.
+In-memory `AuthPort`, `Clock`, and `IdGenerator`, then a composition root.
