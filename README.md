@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, interactors, and in-memory persistence compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Auth, realtime, and a runnable UI are not written yet.
+Domain entities, use-case Input/Output, interactors, in-memory persistence, and Express HTTP (`createExpressServer` plus use-case and event-subscription routers) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Auth, an event bus, a composition root, and a runnable UI are not written yet.
 
 ## Layout
 
@@ -32,7 +32,7 @@ npm test
 ## Scripts
 
 - `npm run typecheck` — `tsc -b` across the four packages
-- `npm test` — Vitest (interactors + in-memory persistence)
+- `npm test` — Vitest (interactors + in-memory persistence + Express HTTP)
 - `npm run build` — emit `packages/*/dist`
 - `npm run lint` — oxlint
 - `npm run clean` — remove build output

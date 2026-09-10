@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. Auth, React, and realtime transport are **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Not a public REST API. Auth and React are **not chosen yet**.
 
 ## Why these layers
 
@@ -13,7 +13,7 @@ Uncle Bob’s circles, named to match how we will build:
 | Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
 | Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | DB, password hashing, websockets, React (later), composition root |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB, Express HTTP server + routers, password hashing / React later, composition root |
 
 ```
   infrastructure  ──►  application  ──►  contracts  ──►  domain
@@ -28,7 +28,7 @@ A use case must not import Postgres, React, or a websocket library. Those appear
 
 ```
 Browser (SPA, port TBD)
-  └─ live subscription (WS / SSE / equivalent) ─► app server
+  └─ live subscription (SSE) ─► app server
                                                       ├─ use cases
                                                       ├─ persistence adapter
                                                       ├─ auth / sessions
@@ -100,6 +100,9 @@ execute
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
 | Tailwind / shadcn / Vite | Infrastructure or a future `packages/web` driving adapter |
 | Selected `channelId` | Presentation state, not a router |
+| HTTP `POST /{useCaseName}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204 |
+| HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber` |
+| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`) |
 
 ## File map (now)
 
@@ -118,6 +121,7 @@ execute
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork` + repositories |
+| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 

@@ -12,7 +12,11 @@
   "files": ["dist"],
   "dependencies": {
     "@clean-chat/application": "*",
+    "@clean-chat/contracts": "*",
     "@clean-chat/domain": "*",
-    "@clean-chat/contracts": "*"
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.23"
   }
 }
