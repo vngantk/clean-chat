@@ -7,8 +7,8 @@ alwaysApply: true
 
 Same product as convex-chat, different architecture. Read `AGENTS.md`. Behavior: `docs/PRODUCT.md`. Layers: `docs/ARCHITECTURE.md`.
 
-- npm workspaces: `@clean-chat/core` → `application` → `infrastructure`
-- Dependencies point inward. Core imports nothing except TypeBox. Infrastructure may import inner packages. Never the reverse.
+- npm workspaces: `@clean-chat/core` → `application` → `infrastructure`; `@clean-chat/client` → `core`
+- Dependencies point inward. Core imports nothing except TypeBox. Infrastructure may import inner packages. Client may import core only (not application or infrastructure). Never the reverse.
 - One domain concept per folder under `packages/core/src/domain`. Schema first: `XxxSchema` with TypeBox, then `type Xxx = Static<typeof XxxSchema>`. No classes. Domain must not import use-cases or events.
 - Driving contract (`UseCase` I/O via `@clean-chat/core/use-cases`; `AppEvent`, `EventSubscriber` from `@clean-chat/core`). Driven ports and interactors live in `@clean-chat/application`.
 - Use cases are `UseCase<Input, Output>` type aliases. One `execute` is one `UnitOfWork.run`. Persistence methods take `TransactionContext`. Publish `AppEvent` after commit. The UI listens with `EventSubscriber`.

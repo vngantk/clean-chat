@@ -58,7 +58,8 @@ async function readSse(
 /**
  * Driving adapter: each {@link EventSubscriber.subscribe} opens
  * `GET {baseUrl}/{type}` as SSE and forwards `data:` JSON frames.
- * `Unsubscribe` aborts the request. Failed streams end without retry.
+ * Uses platform `fetch` (Node 20+ and browsers). `Unsubscribe` aborts the
+ * request. Failed streams end without retry.
  */
 export function createHttpEventSubscriber(baseUrl: string): EventSubscriber {
   const root = baseUrl.replace(/\/+$/, "");

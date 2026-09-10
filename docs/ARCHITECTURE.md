@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Clients: `createHttpUseCase`, `createHttpEventSubscriber`. Not a public REST API. React is **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. React is **not chosen yet**.
 
 ## Why these layers
 
@@ -13,11 +13,11 @@ Uncle Bob’s circles, named to match how we will build:
 | Core | `@clean-chat/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`) |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
 | Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createBackend`, React later |
+| Driving adapters | `@clean-chat/client` | HTTP `createHttpClient` (typed use cases + `eventSubscriber` via `fetch`) |
 
 ```
   infrastructure  ──►  application  ──►  core
-        │                    │
-        └────────────────────┘
+  client          ──────────────────────►  core
       dependencies point inward only
 
   core → nothing except TypeBox
@@ -105,7 +105,7 @@ execute
 | HTTP `POST /{useCaseName}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204 |
 | HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber` |
 | HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`) |
-| HTTP client (`UseCase` / `EventSubscriber`) | Infrastructure `createHttpUseCase`, `createHttpEventSubscriber` |
+| HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber` |
 
 ## File map (now)
 
@@ -123,7 +123,9 @@ execute
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, `createInMemoryEventBus`, `createInMemoryAuth`, `createSystemClock`, `createRandomIdGenerator` |
-| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers + HTTP clients |
+| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
+| `packages/client/src/http/` | `createHttpClient`, `createHttpUseCase`, `createHttpEventSubscriber` (isomorphic `fetch`) |
+| `packages/client/src/index.ts` | Driving `Client` type + HTTP transport |
 | `packages/infrastructure/src/index.ts` | Drivers + composition root |
 | `packages/infrastructure/src/backend.ts` | `createBackend` wires adapters, interactors, Express |
 | `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST` |

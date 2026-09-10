@@ -15,6 +15,7 @@ Domain entities, use-case Input/Output, interactors, in-memory adapters, Express
 | `@clean-chat/core` | Domain entities, driving use cases, `AppEvent` + `EventSubscriber` | `@sinclair/typebox` only |
 | `@clean-chat/application` | Interactors + driven ports | core |
 | `@clean-chat/infrastructure` | Frameworks, drivers, composition root | inner packages |
+| `@clean-chat/client` | Driving HTTP `Client` (`createHttpClient`) | core |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the dependency rule and how this maps to Uncle Bob’s concentric circles.
 
@@ -33,8 +34,8 @@ npm start
 
 ## Scripts
 
-- `npm run typecheck` — `tsc -b` across the three packages
-- `npm test` — Vitest (interactors + in-memory persistence + Express HTTP)
+- `npm run typecheck` — `tsc -b` across the four packages
+- `npm test` — Vitest (interactors + in-memory persistence + Express HTTP + HTTP client)
 - `npm run test:coverage` — same tests with a text, HTML, and LCOV coverage report in `coverage/`
 - `npm run build` — emit `packages/*/dist`
 - `npm run lint` — oxlint

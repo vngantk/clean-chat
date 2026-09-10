@@ -1,17 +1,17 @@
+import { createHttpEventSubscriber } from "@clean-chat/client";
 import {
   channelListChanged,
   messageListChanged,
   type AppEvent,
   type EventSubscriber,
 } from "@clean-chat/core";
-import { afterEach, describe, expect, it } from "vitest";
 import {
   createExpressEventSubscriptionRouter,
   createExpressServer,
-  createHttpEventSubscriber,
+  createInMemoryEventBus,
   type ExpressServer,
-} from "../src/http/index.js";
-import { createInMemoryEventBus } from "../src/memory/event-bus.js";
+} from "@clean-chat/infrastructure";
+import { afterEach, describe, expect, it } from "vitest";
 
 async function waitFor(
   predicate: () => boolean,

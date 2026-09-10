@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
 import {
   createExpressServer,
   createExpressUseCaseRouter,
-  createHttpUseCase,
   type ExpressServer,
   type HttpUseCase,
-} from "../src/http/index.js";
+} from "@clean-chat/infrastructure";
+import { afterEach, describe, expect, it } from "vitest";
+import { createHttpUseCase } from "@clean-chat/client";
 
 function asUseCase(
   execute: (input: unknown) => Promise<unknown>,

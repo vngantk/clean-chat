@@ -20,3 +20,4 @@ export type Channel = Static<typeof ChannelSchema>;
 - `@clean-chat/core` — TypeBox only. `src/domain/` must not import `src/use-cases/` or `src/events/`
 - `@clean-chat/application` — core (interactors and driven ports live here)
 - `@clean-chat/infrastructure` — any inner package; implement ports here (`UnitOfWork`, repositories, `EventPublisher` + `EventSubscriber`)
+- `@clean-chat/client` — core only; isomorphic driving adapters (`createHttpClient` in `src/http/`)

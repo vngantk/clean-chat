@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       "packages/application/test/**/*.test.ts",
       "packages/infrastructure/test/**/*.test.ts",
+      "packages/client/test/**/*.test.ts",
     ],
     coverage: {
       provider: "v8",
@@ -32,6 +33,15 @@ export default defineConfig({
         root,
         "packages/application/src/index.ts",
       ),
+      "@clean-chat/infrastructure": path.join(
+        root,
+        "packages/infrastructure/src/index.ts",
+      ),
+      "@clean-chat/client/http": path.join(
+        root,
+        "packages/client/src/http/index.ts",
+      ),
+      "@clean-chat/client": path.join(root, "packages/client/src/index.ts"),
     },
   },
 });

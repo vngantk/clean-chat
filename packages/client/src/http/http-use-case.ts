@@ -2,8 +2,9 @@ import type { UseCase } from "@clean-chat/core/use-cases";
 
 /**
  * Driving adapter: `POST` JSON `Input` to `url`, return JSON `Output`.
- * Server `void` Output is **204**; this adapter yields `undefined`.
- * Non-OK responses throw (Express default 500 is not a domain error body).
+ * Uses platform `fetch` (Node 20+ and browsers). Server `void` Output is
+ * **204**; this adapter yields `undefined`. Non-OK responses throw (Express
+ * default 500 is not a domain error body).
  */
 export function createHttpUseCase<Input, Output>(
   url: string,

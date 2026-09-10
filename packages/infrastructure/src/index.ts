@@ -6,8 +6,8 @@
  * `GET /{eventType}` is SSE via `EventSubscriber`. `createExpressServer`
  * mounts those routers and implements {@link Lifecycle}. In-memory events
  * are {@link createInMemoryEventBus} (`EventPublisher` + `EventSubscriber`).
- * HTTP clients are {@link createHttpUseCase} and
- * {@link createHttpEventSubscriber}. In-memory {@link createInMemoryAuth}
+ * The isomorphic HTTP driving adapter is `@clean-chat/client`
+ * (`createHttpClient`). In-memory {@link createInMemoryAuth}
  * (scrypt hashes, one process session), {@link createSystemClock}, and
  * {@link createRandomIdGenerator} are here. {@link createBackend} is the
  * composition root. This
@@ -37,8 +37,6 @@ export {
   createExpressEventSubscriptionRouter,
   createExpressServer,
   createExpressUseCaseRouter,
-  createHttpEventSubscriber,
-  createHttpUseCase,
   type ExpressServer,
   type ExpressServerDeps,
   type HttpUseCase,

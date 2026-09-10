@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/application" },
-    { "path": "./packages/infrastructure" }
+    { "path": "./packages/infrastructure" },
+    { "path": "./packages/client" }
   ]
 }
