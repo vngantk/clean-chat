@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. React is **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. React is **not chosen yet**.
 
 ## Why these layers
 
@@ -12,7 +12,7 @@ Uncle Bob’s circles, named to match how we will build:
 | --- | --- | --- |
 | Core | `@clean-chat/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`) |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createBackend`, React later |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createServer`, React later |
 | Driving adapters | `@clean-chat/client` | HTTP `createHttpClient` (typed use cases + `eventSubscriber` via `fetch`) |
 
 ```
@@ -104,7 +104,7 @@ execute
 | Selected `channelId` | Presentation state, not a router |
 | HTTP `POST /{useCase.name}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204. Known errors → 401/403/400 `{ error }`; unexpected → 500 `Internal server error`. `sign-in`/`sign-up` are rate-limited; JSON body cap 16kb |
 | HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber`. Requires a bearer session; concurrent streams are capped per token |
-| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`). `*` CORS only on loopback; Helmet-equivalent headers |
+| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` / composition root `createServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`). Bound address is `server.port` / `server.host` after `start`. `*` CORS only on loopback; Helmet-equivalent headers |
 | HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Non-OK responses throw the `{ error }` string |
 
 ## File map (now)
@@ -127,7 +127,7 @@ execute
 | `packages/client/src/http/` | `createHttpClient`, `createHttpUseCase`, `createHttpEventSubscriber` (isomorphic `fetch`) |
 | `packages/client/src/index.ts` | Driving `Client` type + HTTP transport |
 | `packages/infrastructure/src/index.ts` | Drivers + composition root |
-| `packages/infrastructure/src/backend.ts` | `createBackend` wires adapters, interactors, Express |
+| `packages/infrastructure/src/server.ts` | `createServer` wires adapters, interactors, Express |
 | `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST` |
 | `docs/PRODUCT.md` | Behavior to match |
 

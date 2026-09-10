@@ -35,7 +35,7 @@ describe("createExpressServer", () => {
       port: 0,
     });
     await server.start();
-    const origin = `http://127.0.0.1:${server.getPort()}`;
+    const origin = `http://127.0.0.1:${server.port}`;
 
     const ping = await fetch(`${origin}/api/ping`);
     const echo = await fetch(`${origin}/other/echo?q=hi`);
@@ -54,25 +54,25 @@ describe("createExpressServer", () => {
     });
 
     expect(server.isRunning()).toBe(false);
-    expect(typeof server.getApp().use).toBe("function");
-    expect(server.getServer()).toBeUndefined();
+    expect(typeof server.app.use).toBe("function");
+    expect(server.server).toBeUndefined();
     await server.start();
     expect(server.isRunning()).toBe(true);
 
-    const firstPort = server.getPort();
-    const firstApp = server.getApp();
-    const firstHttp = server.getServer();
+    const firstPort = server.port;
+    const firstApp = server.app;
+    const firstHttp = server.server;
     expect(firstHttp?.listening).toBe(true);
     expect(firstHttp?.address()).toMatchObject({ port: firstPort });
-    expect(firstApp).toBe(server.getApp());
+    expect(firstApp).toBe(server.app);
     const res = await fetch(`http://127.0.0.1:${firstPort}/ping`);
     expect(res.status).toBe(204);
 
     await server.stop();
     expect(server.isRunning()).toBe(false);
-    expect(() => server.getPort()).toThrow(/not running/);
-    expect(server.getApp()).toBe(firstApp);
-    expect(server.getServer()).toBeUndefined();
+    expect(() => server.port).toThrow(/not running/);
+    expect(server.app).toBe(firstApp);
+    expect(server.server).toBeUndefined();
 
     await expect(
       fetch(`http://127.0.0.1:${firstPort}/ping`),
@@ -80,10 +80,10 @@ describe("createExpressServer", () => {
 
     await server.start();
     expect(server.isRunning()).toBe(true);
-    expect(server.getApp()).toBe(firstApp);
-    expect(server.getServer()).not.toBe(firstHttp);
+    expect(server.app).toBe(firstApp);
+    expect(server.server).not.toBe(firstHttp);
     const again = await fetch(
-      `http://127.0.0.1:${server.getPort()}/ping`,
+      `http://127.0.0.1:${server.port}/ping`,
     );
     expect(again.status).toBe(204);
   });
@@ -113,7 +113,7 @@ describe("createExpressServer", () => {
       routers: { "/": pingRouter() },
       port: 0,
     });
-    expect(server.getHost()).toBe("127.0.0.1");
+    expect(server.host).toBe("127.0.0.1");
     await server.stop();
 
     server = createExpressServer({
@@ -121,9 +121,9 @@ describe("createExpressServer", () => {
       port: 0,
       host: "localhost",
     });
-    expect(server.getHost()).toBe("localhost");
+    expect(server.host).toBe("localhost");
     await server.start();
-    expect(server.getHost()).toBe("localhost");
+    expect(server.host).toBe("localhost");
   });
 
   it("allows cross-origin preflight and POST by default", async () => {
@@ -132,7 +132,7 @@ describe("createExpressServer", () => {
       port: 0,
     });
     await server.start();
-    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+    const url = `http://127.0.0.1:${String(server.port)}/ping`;
     const origin = "http://localhost:5173";
 
     const preflight = await fetch(url, {
@@ -171,7 +171,7 @@ describe("createExpressServer", () => {
       corsOrigins: [allowed],
     });
     await server.start();
-    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+    const url = `http://127.0.0.1:${String(server.port)}/ping`;
 
     const ok = await fetch(url, { headers: { Origin: allowed } });
     expect(ok.headers.get("access-control-allow-origin")).toBe(allowed);
@@ -189,7 +189,7 @@ describe("createExpressServer", () => {
       corsOrigins: [],
     });
     await server.start();
-    const url = `http://127.0.0.1:${String(server.getPort())}/ping`;
+    const url = `http://127.0.0.1:${String(server.port)}/ping`;
     const res = await fetch(url, {
       headers: { Origin: "http://localhost:5173" },
     });

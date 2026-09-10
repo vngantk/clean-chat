@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { createBackend } from "./backend.js";
+import { createServer } from "./server.js";
 import type { CorsOrigins } from "./http/express-server.js";
 
 const port = parsePort(process.env["PORT"]);
 const host = process.env["HOST"] ?? "127.0.0.1";
 const corsOrigins = parseCorsOrigins(process.env["CORS_ORIGIN"]);
-const { server } = createBackend({ port, host, corsOrigins });
+const server = createServer({ port, host, corsOrigins });
 
 await server.start();
-console.log(`Clean Chat listening on http://${server.getHost()}:${String(server.getPort())}`);
+console.log(`Clean Chat listening on http://${host}:${String(port)}`);
 
 async function shutdown(): Promise<void> {
   await server.stop();

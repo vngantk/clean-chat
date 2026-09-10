@@ -14,9 +14,9 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Interactor tests: Vitest, ports mocked (`npm test`); coverage via `npm run test:coverage`; in-memory persistence tests live next to the adapter
 - Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes). `createInMemoryAuth` (scrypt with explicit cost params, bearer tokens via `Authorization`, AsyncLocalStorage per request), `createSystemClock`, `createRandomIdGenerator`
 - Events: `createInMemoryEventBus` implements `EventPublisher` and `EventSubscriber` in one object
-- HTTP server: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCase.name}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, optional `host`, optional `corsOrigins` (`*` on loopback only), and returns a `Lifecycle`. JSON / **204** for use cases (`void` → 204 No Content). Known errors are 401 / 403 / 400 `{ error }`; unexpected errors are 500 without a stack. SSE requires a bearer session. Not a public REST API
+- HTTP server: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCase.name}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, optional `host`, optional `corsOrigins` (`*` on loopback only), and returns a `Lifecycle` with `port` / `host` / `app` / `server`. JSON / **204** for use cases (`void` → 204 No Content). Known errors are 401 / 403 / 400 `{ error }`; unexpected errors are 500 without a stack. SSE requires a bearer session. Not a public REST API
 - HTTP client: `@clean-chat/client` (`src/http/`). `createHttpClient({ baseUrl })` returns a `Client` (typed use-case properties + `eventSubscriber`) over platform `fetch` (Node 20+ and browsers). Stores the bearer token from sign-in / sign-up `Authorization` and sends it on later requests. Non-OK responses throw the server `{ error }` string. Also `createHttpUseCase(name, url)` and `createHttpEventSubscriber(baseUrl)`. Import as `@clean-chat/client` or `@clean-chat/client/http`. Other transports may live in sibling folders later
-- Composition root: `createBackend` in `@clean-chat/infrastructure` (`src/backend.ts`); `src/main.ts` listens. `POST /use-cases/{name}`, `GET /events/{type}`. `CORS_ORIGIN` (default `*` on loopback, or a comma-separated allowlist). Off-loopback binds require an explicit allowlist
+- Composition root: `createServer` in `@clean-chat/infrastructure` (`src/server.ts`); `src/main.ts` listens. `POST /use-cases/{name}`, `GET /events/{type}`. `CORS_ORIGIN` (default `*` on loopback, or a comma-separated allowlist). Off-loopback binds require an explicit allowlist
 - No UI framework chosen yet. Session is `Authorization: Bearer` (not cookies/JWT library). Cookie flags / CSRF are skipped because there are no cookies.
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
@@ -35,7 +35,7 @@ core → nothing (except TypeBox)
 | --- | --- |
 | `packages/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`). No I/O. |
 | `packages/application` | Driven ports plus interactors (`src/interactors/`) that implement `UseCase.execute`. |
-| `packages/infrastructure` | In-memory persistence, auth, event bus, Express HTTP, composition root (`createBackend`). |
+| `packages/infrastructure` | In-memory persistence, auth, event bus, Express HTTP, composition root (`createServer`). |
 | `packages/client` | Driving adapters for the UI: HTTP `createHttpClient` (isomorphic `fetch`). Must not import application or infrastructure. |
 
 Preserve JSDoc on public types, ports, and use-case functions.

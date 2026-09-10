@@ -34,17 +34,17 @@ export type ExpressServerDeps = {
  * Express HTTP server.
  *
  * The Express app is created immediately and routers are mounted once.
- * {@link Lifecycle.start} only listens. `getPort` is useful when `port`
- * was `0`. `getHost` is the bind address (`127.0.0.1` when `host` was
- * omitted). `getApp` is always the same application. `getServer` returns
- * the `http.Server` from `app.listen()`, or `undefined` when it has not
- * been started (or after `stop`).
+ * {@link Lifecycle.start} only listens. `port` is useful when the listen
+ * port was `0` (throws if not running). `host` is the bind address
+ * (`127.0.0.1` when omitted). `app` is always the same Express
+ * application. `server` is the `http.Server` from `app.listen()`, or
+ * `undefined` when it has not been started (or after `stop`).
  */
 export type ExpressServer = Lifecycle & {
-  getPort(): number;
-  getHost(): string;
-  getApp(): Express;
-  getServer(): Server | undefined;
+  readonly port: number;
+  readonly host: string;
+  readonly app: Express;
+  readonly server: Server | undefined;
 };
 
 /**
@@ -132,7 +132,7 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
       return httpServer?.listening === true;
     },
 
-    getPort() {
+    get port() {
       const addr = requireListening().address();
       if (addr === null || typeof addr === "string") {
         throw new Error("HTTP server has no TCP port");
@@ -140,15 +140,15 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
       return addr.port;
     },
 
-    getHost() {
+    get host() {
       return host;
     },
 
-    getApp() {
+    get app() {
       return app;
     },
 
-    getServer() {
+    get server() {
       return httpServer;
     },
   };

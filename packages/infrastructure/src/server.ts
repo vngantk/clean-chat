@@ -35,13 +35,13 @@ import { createBearerSessionMiddleware } from "./http/bearer-session-middleware.
 import {
   createExpressServer,
   type CorsOrigins,
-  type ExpressServer,
 } from "./http/express-server.js";
 import {
   createExpressUseCaseRouter,
   type HttpUseCase,
 } from "./http/express-use-case-router.js";
 import type { AuthRateLimitOptions } from "./http/auth-rate-limit.js";
+import type {Lifecycle} from "./http/index.js";
 
 const APP_EVENT_TYPES: AppEvent["type"][] = [
   "channel-list-changed",
@@ -50,7 +50,7 @@ const APP_EVENT_TYPES: AppEvent["type"][] = [
   "presence-changed",
 ];
 
-export type BackendOptions = {
+export type ServerOptions = {
   port?: number;
   host?: string;
   corsOrigins?: CorsOrigins;
@@ -65,18 +65,10 @@ export type BackendOptions = {
 };
 
 /**
- * Composition root: in-memory adapters, interactors, and Express routers.
- * Call {@link ExpressServer.start} to listen. Does not start by itself.
- */
-export type Backend = {
-  server: ExpressServer;
-};
-
-/**
  * Wire persistence, auth, events, use cases, and HTTP.
  * Default bind is `127.0.0.1:3000`. Use `port: 0` in tests.
  */
-export function createBackend(options: BackendOptions = {}): Backend {
+export function createServer(options: ServerOptions = {}): Lifecycle & { readonly port: number; readonly host: string; }{
   const persistence = createInMemoryPersistence();
   const ids = createRandomIdGenerator();
   const clock = createSystemClock();
@@ -104,7 +96,7 @@ export function createBackend(options: BackendOptions = {}): Backend {
     createDisconnectPresence({auth, uow, presence, events,}),
   ]);
 
-  const server = createExpressServer({
+  return createExpressServer({
     routers: {
       "/use-cases": createExpressUseCaseRouter(useCases, {
         ...(options.jsonBodyLimit === undefined
@@ -133,8 +125,6 @@ export function createBackend(options: BackendOptions = {}): Backend {
       ? {}
       : { corsOrigins: options.corsOrigins }),
   });
-
-  return { server };
 }
 
 function validateUseCases(

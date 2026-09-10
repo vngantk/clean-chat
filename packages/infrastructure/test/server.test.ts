@@ -1,21 +1,22 @@
 import { createHttpClient } from "@clean-chat/client";
 import { SignUpName } from "@clean-chat/core/use-cases";
 import { afterEach, describe, expect, it } from "vitest";
-import { createBackend, type Backend } from "../src/backend.js";
+import { createServer } from "../src/server.js";
+import {Lifecycle} from "../src";
 
-describe("createBackend", () => {
-  let backend: Backend | undefined;
+describe("createServer", () => {
+  let server: ReturnType<typeof createServer> | undefined;
 
   afterEach(async () => {
-    await backend?.server.stop();
-    backend = undefined;
+    await server?.stop();
+    server = undefined;
   });
 
   it("wires auth and channels over HTTP", async () => {
-    backend = createBackend({ port: 0 });
-    await backend.server.start();
+    server = createServer({ port: 0 });
+    await server.start();
     const client = createHttpClient({
-      baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+      baseUrl: `http://${server.host}:${String(server.port)}`,
     });
 
     const user = await client.signUp.execute({
@@ -30,7 +31,7 @@ describe("createBackend", () => {
     await expect(client.getCurrentUser.execute()).resolves.toEqual(user);
 
     const other = createHttpClient({
-      baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+      baseUrl: `http://${server.host}:${String(server.port)}`,
     });
     const grace = await other.signUp.execute({
       email: "grace@example.com",
@@ -60,10 +61,10 @@ describe("createBackend", () => {
   });
 
   it("maps auth failures to 401 and does not leak stacks", async () => {
-    backend = createBackend({ port: 0 });
-    await backend.server.start();
+    server = createServer({ port: 0 });
+    await server.start();
     const client = createHttpClient({
-      baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+      baseUrl: `http://${server.host}:${String(server.port)}`,
     });
     await client.signUp.execute({
       email: "ada@example.com",
@@ -78,15 +79,15 @@ describe("createBackend", () => {
     ).rejects.toThrow("Invalid email or password.");
     await expect(
       createHttpClient({
-        baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+        baseUrl: `http://${server.host}:${String(server.port)}`,
       }).sendMessage.execute({ channelId: "ch-1", body: "hi" }),
     ).rejects.toThrow("Not authenticated");
   });
 
   it("rejects unauthenticated SSE and caps streams per token", async () => {
-    backend = createBackend({ port: 0, sseMaxConnectionsPerToken: 1 });
-    await backend.server.start();
-    const base = `http://${backend.server.getHost()}:${String(backend.server.getPort())}`;
+    server = createServer({ port: 0, sseMaxConnectionsPerToken: 1 });
+    await server.start();
+    const base = `http://${server.host}:${String(server.port)}`;
 
     const anonymous = await fetch(`${base}/events/channel-list-changed`);
     expect(anonymous.status).toBe(401);
@@ -121,12 +122,12 @@ describe("createBackend", () => {
   });
 
   it("rate-limits sign-up", async () => {
-    backend = createBackend({
+    server = createServer({
       port: 0,
       authRateLimit: { max: 2, windowMs: 60_000 },
     });
-    await backend.server.start();
-    const clientBase = `http://${backend.server.getHost()}:${String(backend.server.getPort())}`;
+    await server.start();
+    const clientBase = `http://${server.host}:${String(server.port)}`;
     const a = createHttpClient({ baseUrl: clientBase });
     const b = createHttpClient({ baseUrl: clientBase });
     const c = createHttpClient({ baseUrl: clientBase });

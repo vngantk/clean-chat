@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, interactors, in-memory adapters, Express HTTP, and a composition root (`createBackend`) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A runnable UI is not written yet.
+Domain entities, use-case Input/Output, interactors, in-memory adapters, Express HTTP, and a composition root (`createServer`) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A runnable UI is not written yet.
 
 ## Layout
 

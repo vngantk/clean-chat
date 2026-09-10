@@ -1,6 +1,6 @@
 import { createHttpClient } from "@clean-chat/client";
 import type { AppEvent } from "@clean-chat/core";
-import { createBackend, type Backend } from "@clean-chat/infrastructure";
+import { createServer } from "@clean-chat/infrastructure";
 import { afterEach, describe, expect, it } from "vitest";
 
 async function waitFor(
@@ -17,18 +17,18 @@ async function waitFor(
 }
 
 describe("createHttpClient", () => {
-  let backend: Backend | undefined;
+  let server: ReturnType<typeof createServer> | undefined;
 
   afterEach(async () => {
-    await backend?.server.stop();
-    backend = undefined;
+    await server?.stop();
+    server = undefined;
   });
 
   async function connect() {
-    backend = createBackend({ port: 0 });
-    await backend.server.start();
+    server = createServer({ port: 0 });
+    await server.start();
     return createHttpClient({
-      baseUrl: `http://${backend.server.getHost()}:${String(backend.server.getPort())}`,
+      baseUrl: `http://${server.host}:${String(server.port)}`,
     });
   }
 

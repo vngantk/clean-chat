@@ -9,7 +9,7 @@
  * The isomorphic HTTP driving adapter is `@clean-chat/client`
  * (`createHttpClient`). In-memory {@link createInMemoryAuth}
  * (scrypt hashes, bearer tokens per request), {@link createSystemClock}, and
- * {@link createRandomIdGenerator} are here. {@link createBackend} is the
+ * {@link createRandomIdGenerator} are here. {@link createServer} is the
  * composition root. This
  * package may import the inner layers and implement their ports. Inner
  * layers must never import this package.
@@ -43,4 +43,4 @@ export {
   type HttpUseCase,
   type Lifecycle,
 } from "./http/index.js";
-export { createBackend, type Backend, type BackendOptions } from "./backend.js";
+export { createServer, type ServerOptions } from "./server.js";

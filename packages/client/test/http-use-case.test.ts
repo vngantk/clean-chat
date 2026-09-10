@@ -29,7 +29,7 @@ describe("createHttpUseCase", () => {
     });
     await server.start();
     const path = mount === "/" ? "" : mount;
-    return `http://${server.getHost()}:${String(server.getPort())}${path}`;
+    return `http://${server.host}:${String(server.port)}${path}`;
   }
 
   it("POSTs JSON Input and returns JSON Output", async () => {

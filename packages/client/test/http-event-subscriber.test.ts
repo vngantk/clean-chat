@@ -67,7 +67,7 @@ describe("createHttpEventSubscriber", () => {
     });
     await server.start();
     const path = mount === "/" ? "" : mount;
-    return `http://${server.getHost()}:${String(server.getPort())}${path}`;
+    return `http://${server.host}:${String(server.port)}${path}`;
   }
 
   it("forwards published events over SSE", async () => {
