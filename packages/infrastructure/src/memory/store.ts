@@ -9,8 +9,9 @@ import type { NewMessage } from "@clean-chat/application";
 /**
  * Shared maps for the in-memory persistence adapter.
  *
- * {@link UserRepository} only reads `users`. Until `AuthPort` is implemented,
- * callers may `store.users.set(id, user)` to seed display names for message joins.
+ * {@link UserRepository} only reads `users`. The in-memory `AuthPort` writes
+ * signed-up users here so message joins see display names. Tests may still
+ * `store.users.set(id, user)` to seed authors without going through auth.
  */
 export type InMemoryStore = {
   channels: Map<string, Channel>;

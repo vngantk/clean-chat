@@ -18,6 +18,13 @@ export {
   createInMemoryEventBus,
   type InMemoryEventBus,
 } from "./event-bus.js";
+export {
+  createInMemoryAuth,
+  EMAIL_TAKEN_ERROR,
+  INVALID_CREDENTIALS_ERROR,
+} from "./auth.js";
+export { createSystemClock } from "./clock.js";
+export { createRandomIdGenerator } from "./id-generator.js";
 
 /**
  * One in-memory database plus repositories and a rolling-back unit of work.

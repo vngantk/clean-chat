@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Clients: `createHttpUseCase`, `createHttpEventSubscriber`. Not a public REST API. Auth and React are **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence and auth are **in-memory** adapters for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Clients: `createHttpUseCase`, `createHttpEventSubscriber`. Not a public REST API. React is **not chosen yet**.
 
 ## Why these layers
 
@@ -13,7 +13,7 @@ Uncle Bob’s circles, named to match how we will build:
 | Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
 | Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
-| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB, Express HTTP server + routers, password hashing / React later, composition root |
+| Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, React later, composition root |
 
 ```
   infrastructure  ──►  application  ──►  contracts  ──►  domain
@@ -96,7 +96,7 @@ execute
 | --- | --- |
 | Slug rules, message body limits | Domain TypeBox schemas (`ChannelNameSchema`, `MessageBodySchema`) |
 | `Channel names must be 1–32 characters.` | Same strings as PRODUCT.md |
-| Password hashing, session cookies/JWT | Infrastructure (auth adapter) |
+| Password hashing, process session | Infrastructure `createInMemoryAuth` (`scrypt`). Cookies/JWT later |
 | “Latest 50” | Use case (application rule), not a SQL detail leaked inward |
 | Tailwind / shadcn / Vite | Infrastructure or a future `packages/web` driving adapter |
 | Selected `channelId` | Presentation state, not a router |
@@ -121,7 +121,7 @@ execute
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
-| `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, and `createInMemoryEventBus` |
+| `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, `createInMemoryEventBus`, `createInMemoryAuth`, `createSystemClock`, `createRandomIdGenerator` |
 | `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers + HTTP clients |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
@@ -135,4 +135,4 @@ execute
 
 ## Next
 
-In-memory `AuthPort`, `Clock`, and `IdGenerator`, then a composition root.
+A composition root that wires interactors, in-memory adapters, and Express.

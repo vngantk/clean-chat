@@ -7,13 +7,16 @@
  * mounts those routers and implements {@link Lifecycle}. In-memory events
  * are {@link createInMemoryEventBus} (`EventPublisher` + `EventSubscriber`).
  * HTTP clients are {@link createHttpUseCase} and
- * {@link createHttpEventSubscriber}. Auth and a composition root will live
+ * {@link createHttpEventSubscriber}. In-memory {@link createInMemoryAuth}
+ * (scrypt hashes, one process session), {@link createSystemClock}, and
+ * {@link createRandomIdGenerator} are here. A composition root will live
  * here later. This
  * package may import the inner layers and implement their ports. Inner
  * layers must never import this package.
  */
 
 export {
+  createInMemoryAuth,
   createInMemoryChannelRepository,
   createInMemoryEventBus,
   createInMemoryMessageRepository,
@@ -23,6 +26,10 @@ export {
   createInMemoryTypingRepository,
   createInMemoryUnitOfWork,
   createInMemoryUserRepository,
+  createRandomIdGenerator,
+  createSystemClock,
+  EMAIL_TAKEN_ERROR,
+  INVALID_CREDENTIALS_ERROR,
   type InMemoryEventBus,
   type InMemoryStore,
 } from "./memory/index.js";

@@ -6,7 +6,7 @@ This repo is a learning demo. It is not a production messenger.
 
 ## Status
 
-Domain entities, use-case Input/Output, interactors, in-memory persistence and event bus, and Express HTTP (server routers, `Lifecycle`, and HTTP clients) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Auth, a composition root, and a runnable UI are not written yet.
+Domain entities, use-case Input/Output, interactors, in-memory persistence, auth, event bus, and Express HTTP (server routers, `Lifecycle`, and HTTP clients) compile ([docs/DOMAIN.md](docs/DOMAIN.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A composition root and a runnable UI are not written yet.
 
 ## Layout
 

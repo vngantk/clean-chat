@@ -11,10 +11,10 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Driving use cases live in `packages/contracts/src/use-cases/` and are imported as `@clean-chat/contracts/use-cases`
 - Explicit realtime: `AppEvent` + `EventSubscriber` (contracts); `EventPublisher` (application); publish after `UnitOfWork.run` commits
 - Interactor tests: Vitest, ports mocked (`npm test`); in-memory persistence tests live next to the adapter
-- Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes)
+- Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes). `createInMemoryAuth` (scrypt, one process session), `createSystemClock`, `createRandomIdGenerator`
 - Events: `createInMemoryEventBus` implements `EventPublisher` and `EventSubscriber` in one object
 - HTTP: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCaseName}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, and optional `host`, and returns a `Lifecycle`. Clients: `createHttpUseCase(url)` POSTs JSON; `createHttpEventSubscriber(baseUrl)` implements `EventSubscriber` over SSE `fetch`. JSON / **204** for use cases (`void` → 204 No Content). Not a public REST API
-- No UI framework or auth library chosen yet
+- No UI framework or cookie/JWT session library chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
 
@@ -27,7 +27,7 @@ Dependencies point **inward**. Inner packages cannot import outer ones.
 | `packages/domain` | Enterprise rules. TypeBox schemas + plain types. No I/O. |
 | `packages/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber`. |
 | `packages/application` | Driven ports plus interactors (`src/interactors/`) that implement `UseCase.execute`. |
-| `packages/infrastructure` | In-memory persistence and event bus, Express HTTP (`Lifecycle` + routers). Composition root later. Frameworks. |
+| `packages/infrastructure` | In-memory persistence, auth, event bus, Express HTTP. Composition root later. Frameworks. |
 
 Preserve JSDoc on public types, ports, and use-case functions.
 
