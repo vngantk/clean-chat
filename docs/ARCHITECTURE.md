@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Not a public REST API. Auth and React are **not chosen yet**.
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence is an **in-memory** adapter for now. HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCaseName}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`). Clients: `createHttpUseCase`, `createHttpEventSubscriber`. Not a public REST API. Auth and React are **not chosen yet**.
 
 ## Why these layers
 
@@ -103,6 +103,7 @@ execute
 | HTTP `POST /{useCaseName}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204 |
 | HTTP `GET /{eventType}` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber` |
 | HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` (path → router, `port`, optional `host`) |
+| HTTP client (`UseCase` / `EventSubscriber`) | Infrastructure `createHttpUseCase`, `createHttpEventSubscriber` |
 
 ## File map (now)
 
@@ -121,7 +122,7 @@ execute
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, and `createInMemoryEventBus` |
-| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
+| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers + HTTP clients |
 | `packages/infrastructure/src/index.ts` | Drivers + future composition root |
 | `docs/PRODUCT.md` | Behavior to match |
 

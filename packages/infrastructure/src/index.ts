@@ -6,7 +6,9 @@
  * `GET /{eventType}` is SSE via `EventSubscriber`. `createExpressServer`
  * mounts those routers and implements {@link Lifecycle}. In-memory events
  * are {@link createInMemoryEventBus} (`EventPublisher` + `EventSubscriber`).
- * Auth and a composition root will live here later. This
+ * HTTP clients are {@link createHttpUseCase} and
+ * {@link createHttpEventSubscriber}. Auth and a composition root will live
+ * here later. This
  * package may import the inner layers and implement their ports. Inner
  * layers must never import this package.
  */
@@ -28,6 +30,8 @@ export {
   createExpressEventSubscriptionRouter,
   createExpressServer,
   createExpressUseCaseRouter,
+  createHttpEventSubscriber,
+  createHttpUseCase,
   type ExpressServer,
   type ExpressServerDeps,
   type HttpUseCase,

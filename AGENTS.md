@@ -13,7 +13,7 @@ Learning demo: the same Slack-style chat as **convex-chat**, rebuilt with **Clea
 - Interactor tests: Vitest, ports mocked (`npm test`); in-memory persistence tests live next to the adapter
 - Persistence: in-memory adapters in `@clean-chat/infrastructure` (`src/memory/`). Repository ports take `TransactionContext`; `AuthPort` does not (sessions/hashes)
 - Events: `createInMemoryEventBus` implements `EventPublisher` and `EventSubscriber` in one object
-- HTTP: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCaseName}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, and optional `host`, and returns a `Lifecycle`. JSON / **204** for use cases (`void` → 204 No Content). Not a public REST API
+- HTTP: Express in `@clean-chat/infrastructure` (`src/http/`). `createExpressUseCaseRouter` mounts `POST /{useCaseName}` → `UseCase.execute`. `createExpressEventSubscriptionRouter` mounts `GET /{eventType}` SSE via `EventSubscriber`. `createExpressServer` takes a path→router map, `port`, and optional `host`, and returns a `Lifecycle`. Clients: `createHttpUseCase(url)` POSTs JSON; `createHttpEventSubscriber(baseUrl)` implements `EventSubscriber` over SSE `fetch`. JSON / **204** for use cases (`void` → 204 No Content). Not a public REST API
 - No UI framework or auth library chosen yet
 
 When those are chosen, document them here and in `docs/ARCHITECTURE.md`.
