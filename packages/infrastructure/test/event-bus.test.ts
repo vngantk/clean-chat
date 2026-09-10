@@ -1,7 +1,7 @@
 import {
   channelListChanged,
   messageListChanged,
-} from "@clean-chat/contracts";
+} from "@clean-chat/core";
 import { describe, expect, it } from "vitest";
 import { createInMemoryEventBus } from "../src/memory/event-bus.js";
 

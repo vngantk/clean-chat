@@ -1,5 +1,5 @@
-import type { SignUp } from "@clean-chat/contracts/use-cases";
-import { trimDisplayName } from "@clean-chat/domain";
+import type { SignUp } from "@clean-chat/core/use-cases";
+import { trimDisplayName } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 
 /** Thrown when sign-up `name` is empty after trim. */

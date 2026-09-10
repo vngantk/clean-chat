@@ -1,5 +1,5 @@
 import type { MessageRepository, NewMessage } from "@clean-chat/application";
-import { UNKNOWN_AUTHOR_NAME, type Message } from "@clean-chat/domain";
+import { UNKNOWN_AUTHOR_NAME, type Message } from "@clean-chat/core/domain";
 import type { InMemoryStore } from "./store.js";
 
 export function createInMemoryMessageRepository(

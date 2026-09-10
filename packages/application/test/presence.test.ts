@@ -1,4 +1,4 @@
-import { presenceChanged } from "@clean-chat/contracts";
+import { presenceChanged } from "@clean-chat/core";
 import { describe, expect, it } from "vitest";
 import { createDisconnectPresence } from "../src/interactors/disconnect-presence.js";
 import { createHeartbeatPresence } from "../src/interactors/heartbeat-presence.js";

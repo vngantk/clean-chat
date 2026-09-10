@@ -3,7 +3,7 @@ import {
   messageListChanged,
   type AppEvent,
   type EventSubscriber,
-} from "@clean-chat/contracts";
+} from "@clean-chat/core";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   createExpressEventSubscriptionRouter,

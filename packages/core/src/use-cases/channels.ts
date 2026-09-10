@@ -4,7 +4,7 @@ import {
   ChannelSchema,
   type Channel,
   type ChannelId,
-} from "@clean-chat/domain";
+} from "../domain/index.js";
 import type { UseCase } from "./use-case.js";
 
 export const ChannelListSchema = Type.Array(ChannelSchema);

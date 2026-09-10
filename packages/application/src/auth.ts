@@ -3,7 +3,7 @@ import type {
   Email,
   Password,
   User,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 
 /**
  * Identity and session. Not part of the chat-table unit of work — password

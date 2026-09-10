@@ -12,8 +12,7 @@
   "files": ["dist"],
   "dependencies": {
     "@clean-chat/application": "*",
-    "@clean-chat/contracts": "*",
-    "@clean-chat/domain": "*",
+    "@clean-chat/core": "*",
     "express": "^4.21.2"
   },
   "devDependencies": {

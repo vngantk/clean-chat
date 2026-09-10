@@ -1,5 +1,5 @@
-import { presenceChanged } from "@clean-chat/contracts";
-import type { DisconnectPresence } from "@clean-chat/contracts/use-cases";
+import { presenceChanged } from "@clean-chat/core";
+import type { DisconnectPresence } from "@clean-chat/core/use-cases";
 import type { EventPublisher } from "../event-publisher.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
 import type { UnitOfWork } from "../transaction.js";

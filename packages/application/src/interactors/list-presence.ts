@@ -1,4 +1,4 @@
-import type { ListPresence } from "@clean-chat/contracts/use-cases";
+import type { ListPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";
 import type { UnitOfWork } from "../transaction.js";

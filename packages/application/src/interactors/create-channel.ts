@@ -1,12 +1,12 @@
-import { channelListChanged } from "@clean-chat/contracts";
-import type { CreateChannel } from "@clean-chat/contracts/use-cases";
+import { channelListChanged } from "@clean-chat/core";
+import type { CreateChannel } from "@clean-chat/core/use-cases";
 import {
   CHANNEL_NAME_LENGTH_ERROR,
   CHANNEL_NAME_MAX_LENGTH,
   CHANNEL_NAME_PATTERN,
   CHANNEL_NAME_PATTERN_ERROR,
   normalizeChannelName,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { IdGenerator } from "../id-generator.js";

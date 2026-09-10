@@ -1,5 +1,5 @@
-import { typingChanged } from "@clean-chat/contracts";
-import type { ClearTyping } from "@clean-chat/contracts/use-cases";
+import { typingChanged } from "@clean-chat/core";
+import type { ClearTyping } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { TypingRepository } from "../repositories/typing-repository.js";

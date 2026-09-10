@@ -1,4 +1,4 @@
-import type { GetCurrentUser } from "@clean-chat/contracts/use-cases";
+import type { GetCurrentUser } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 
 /**

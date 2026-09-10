@@ -4,7 +4,7 @@ import {
   MessageIdSchema,
   MessageSchema,
   type Message,
-} from "@clean-chat/domain";
+} from "../domain/index.js";
 import type { UseCase } from "./use-case.js";
 
 export const ListMessagesInputSchema = Type.Object(

@@ -1,8 +1,8 @@
-import { channelListChanged } from "@clean-chat/contracts";
+import { channelListChanged } from "@clean-chat/core";
 import {
   CHANNEL_NAME_LENGTH_ERROR,
   CHANNEL_NAME_PATTERN_ERROR,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import { describe, expect, it } from "vitest";
 import { createCreateChannel } from "../src/interactors/create-channel.js";
 import { createEnsureGeneralChannel } from "../src/interactors/ensure-general-channel.js";

@@ -1,6 +1,6 @@
 # Domain entities
 
-How `@clean-chat/domain` models [PRODUCT.md](./PRODUCT.md). The source of truth is the TypeBox schemas in `packages/domain/src/`. This document explains the convention and each type.
+How `@clean-chat/core/domain` models [PRODUCT.md](./PRODUCT.md). The source of truth is the TypeBox schemas in `packages/core/src/domain/`. This document explains the convention and each type.
 
 There are no classes. Runtime validation (`Value.Check`) is not wired yet; the schemas are the contract use cases will check against.
 
@@ -26,19 +26,19 @@ Naming:
 
 Object entities set `additionalProperties: false`. Nested fields reuse other schemas (`createdBy: UserIdSchema`) so ids stay one definition.
 
-Package: `@sinclair/typebox` 0.34. Domain may import that library and nothing else (no other workspace packages, no I/O).
+Package: `@sinclair/typebox` 0.34. Domain may import that library and nothing else (no use-cases, no events, no other workspace packages, no I/O). Import entities as `@clean-chat/core/domain`.
 
 ## Layout
 
 | Path | Entity / values |
 | --- | --- |
-| [`packages/domain/src/user/index.ts`](../packages/domain/src/user/index.ts) | `User`, `UserId`, `Email`, `Password`, `DisplayName` |
-| [`packages/domain/src/channel/index.ts`](../packages/domain/src/channel/index.ts) | `Channel`, `ChannelId`, `ChannelName` |
-| [`packages/domain/src/message/index.ts`](../packages/domain/src/message/index.ts) | `Message`, `MessageId`, `MessageBody` |
-| [`packages/domain/src/typing/index.ts`](../packages/domain/src/typing/index.ts) | `Typing` |
-| [`packages/domain/src/presence/index.ts`](../packages/domain/src/presence/index.ts) | `Presence`, `SessionId` |
-| [`packages/domain/src/unix-time.ts`](../packages/domain/src/unix-time.ts) | `UnixTimeMs` |
-| [`packages/domain/src/index.ts`](../packages/domain/src/index.ts) | Public barrel |
+| [`packages/core/src/domain/user/index.ts`](../packages/core/src/domain/user/index.ts) | `User`, `UserId`, `Email`, `Password`, `DisplayName` |
+| [`packages/core/src/domain/channel/index.ts`](../packages/core/src/domain/channel/index.ts) | `Channel`, `ChannelId`, `ChannelName` |
+| [`packages/core/src/domain/message/index.ts`](../packages/core/src/domain/message/index.ts) | `Message`, `MessageId`, `MessageBody` |
+| [`packages/core/src/domain/typing/index.ts`](../packages/core/src/domain/typing/index.ts) | `Typing` |
+| [`packages/core/src/domain/presence/index.ts`](../packages/core/src/domain/presence/index.ts) | `Presence`, `SessionId` |
+| [`packages/core/src/domain/unix-time.ts`](../packages/core/src/domain/unix-time.ts) | `UnixTimeMs` |
+| [`packages/core/src/domain/index.ts`](../packages/core/src/domain/index.ts) | Public barrel |
 
 ## How they relate
 

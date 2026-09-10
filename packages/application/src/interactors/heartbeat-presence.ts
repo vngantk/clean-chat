@@ -1,5 +1,5 @@
-import { presenceChanged } from "@clean-chat/contracts";
-import type { HeartbeatPresence } from "@clean-chat/contracts/use-cases";
+import { presenceChanged } from "@clean-chat/core";
+import type { HeartbeatPresence } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { PresenceRepository } from "../repositories/presence-repository.js";

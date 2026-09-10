@@ -1,4 +1,4 @@
-import type { AppEvent, EventSubscriber } from "@clean-chat/contracts";
+import type { AppEvent, EventSubscriber } from "@clean-chat/core";
 import express, { type Router } from "express";
 
 /**

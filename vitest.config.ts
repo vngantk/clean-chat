@@ -13,19 +13,19 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@clean-chat/contracts/use-cases": path.join(
+      "@clean-chat/core/use-cases": path.join(
         root,
-        "packages/contracts/src/use-cases/index.ts",
+        "packages/core/src/use-cases/index.ts",
       ),
-      "@clean-chat/contracts": path.join(
+      "@clean-chat/core/domain": path.join(
         root,
-        "packages/contracts/src/index.ts",
+        "packages/core/src/domain/index.ts",
       ),
+      "@clean-chat/core": path.join(root, "packages/core/src/index.ts"),
       "@clean-chat/application": path.join(
         root,
         "packages/application/src/index.ts",
       ),
-      "@clean-chat/domain": path.join(root, "packages/domain/src/index.ts"),
     },
   },
 });

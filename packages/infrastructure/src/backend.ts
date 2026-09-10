@@ -16,7 +16,7 @@ import {
   createSignUp,
   createUpsertTyping,
 } from "@clean-chat/application";
-import type { AppEvent } from "@clean-chat/contracts";
+import type { AppEvent } from "@clean-chat/core";
 import { createInMemoryAuth } from "./memory/auth.js";
 import { createSystemClock } from "./memory/clock.js";
 import { createInMemoryEventBus } from "./memory/event-bus.js";

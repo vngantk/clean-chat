@@ -1,4 +1,4 @@
-import { messageListChanged } from "@clean-chat/contracts";
+import { messageListChanged } from "@clean-chat/core";
 import {
   CHANNEL_NOT_FOUND_ERROR,
   MESSAGE_BODY_MAX_LENGTH,
@@ -6,7 +6,7 @@ import {
   MESSAGE_EMPTY_ERROR,
   MESSAGE_LIST_LIMIT,
   MESSAGE_TOO_LONG_ERROR,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import { describe, expect, it } from "vitest";
 import { createDeleteOwnMessage } from "../src/interactors/delete-own-message.js";
 import { createListMessages } from "../src/interactors/list-messages.js";

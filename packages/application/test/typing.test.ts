@@ -1,5 +1,5 @@
-import { typingChanged } from "@clean-chat/contracts";
-import { TYPING_EXPIRE_MS } from "@clean-chat/domain";
+import { typingChanged } from "@clean-chat/core";
+import { TYPING_EXPIRE_MS } from "@clean-chat/core/domain";
 import { describe, expect, it } from "vitest";
 import { createClearTyping } from "../src/interactors/clear-typing.js";
 import { createListTyping } from "../src/interactors/list-typing.js";

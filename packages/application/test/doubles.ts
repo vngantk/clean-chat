@@ -4,7 +4,7 @@ import type {
   Presence,
   Typing,
   User,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import { vi } from "vitest";
 import type { AuthPort } from "../src/auth.js";
 import type { Clock } from "../src/clock.js";

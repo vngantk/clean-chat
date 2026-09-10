@@ -4,7 +4,7 @@ import {
   PasswordSchema,
   UserSchema,
   type User,
-} from "@clean-chat/domain";
+} from "../domain/index.js";
 import type { UseCase } from "./use-case.js";
 
 /**

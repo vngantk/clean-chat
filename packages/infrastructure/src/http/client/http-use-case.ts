@@ -1,4 +1,4 @@
-import type { UseCase } from "@clean-chat/contracts/use-cases";
+import type { UseCase } from "@clean-chat/core/use-cases";
 
 /**
  * Driving adapter: `POST` JSON `Input` to `url`, return JSON `Output`.

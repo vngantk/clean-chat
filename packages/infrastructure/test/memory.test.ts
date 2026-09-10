@@ -1,4 +1,4 @@
-import { UNKNOWN_AUTHOR_NAME } from "@clean-chat/domain";
+import { UNKNOWN_AUTHOR_NAME } from "@clean-chat/core/domain";
 import { describe, expect, it } from "vitest";
 import { createInMemoryPersistence } from "../src/memory/index.js";
 

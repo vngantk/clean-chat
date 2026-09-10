@@ -1,6 +1,6 @@
-import { messageListChanged } from "@clean-chat/contracts";
-import type { DeleteOwnMessage } from "@clean-chat/contracts/use-cases";
-import { MESSAGE_DELETE_FORBIDDEN_ERROR } from "@clean-chat/domain";
+import { messageListChanged } from "@clean-chat/core";
+import type { DeleteOwnMessage } from "@clean-chat/core/use-cases";
+import { MESSAGE_DELETE_FORBIDDEN_ERROR } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { MessageRepository } from "../repositories/message-repository.js";

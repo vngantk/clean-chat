@@ -1,4 +1,4 @@
-import type { AppEvent } from "@clean-chat/contracts";
+import type { AppEvent } from "@clean-chat/core";
 
 /**
  * Outbound port. Call **after** `UnitOfWork.run` commits so subscribers never

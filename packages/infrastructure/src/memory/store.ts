@@ -3,7 +3,7 @@ import type {
   Presence,
   Typing,
   User,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import type { NewMessage } from "@clean-chat/application";
 
 /**

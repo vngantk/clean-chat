@@ -1,6 +1,6 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import type { AuthPort, IdGenerator } from "@clean-chat/application";
-import type { User } from "@clean-chat/domain";
+import type { User } from "@clean-chat/core/domain";
 import type { InMemoryStore } from "./store.js";
 
 const HASH_LENGTH = 32;

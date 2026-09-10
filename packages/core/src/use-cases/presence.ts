@@ -4,7 +4,7 @@ import {
   PresenceSchema,
   SessionIdSchema,
   type Presence,
-} from "@clean-chat/domain";
+} from "../domain/index.js";
 import type { UseCase } from "./use-case.js";
 
 export const ListPresenceInputSchema = Type.Object(

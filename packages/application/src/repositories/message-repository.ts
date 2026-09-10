@@ -8,7 +8,7 @@ import {
   type ChannelId,
   type Message,
   type MessageId,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import type { TransactionContext } from "../transaction.js";
 
 /**

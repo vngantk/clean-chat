@@ -6,8 +6,8 @@
  * `UseCase.execute`. Repositories are grouped under `repositories/`;
  * interactors under `interactors/`.
  *
- * This package may import `@clean-chat/domain` and `@clean-chat/contracts`.
- * It must not import `@clean-chat/infrastructure`.
+ * This package may import `@clean-chat/core`. It must not import
+ * `@clean-chat/infrastructure`.
  */
 
 export type { AuthPort } from "./auth.js";

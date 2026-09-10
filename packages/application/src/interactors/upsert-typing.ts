@@ -1,5 +1,5 @@
-import { typingChanged } from "@clean-chat/contracts";
-import type { UpsertTyping } from "@clean-chat/contracts/use-cases";
+import { typingChanged } from "@clean-chat/core";
+import type { UpsertTyping } from "@clean-chat/core/use-cases";
 import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
 import type { EventPublisher } from "../event-publisher.js";

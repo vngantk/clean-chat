@@ -1,12 +1,12 @@
-import { messageListChanged } from "@clean-chat/contracts";
-import type { SendMessage } from "@clean-chat/contracts/use-cases";
+import { messageListChanged } from "@clean-chat/core";
+import type { SendMessage } from "@clean-chat/core/use-cases";
 import {
   CHANNEL_NOT_FOUND_ERROR,
   MESSAGE_BODY_MAX_LENGTH,
   MESSAGE_EMPTY_ERROR,
   MESSAGE_TOO_LONG_ERROR,
   trimMessageBody,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
 import type { EventPublisher } from "../event-publisher.js";

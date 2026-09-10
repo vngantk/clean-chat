@@ -3,7 +3,7 @@ import {
   ChannelIdSchema,
   TypingSchema,
   type Typing,
-} from "@clean-chat/domain";
+} from "../domain/index.js";
 import type { UseCase } from "./use-case.js";
 
 export const ChannelScopedInputSchema = Type.Object(

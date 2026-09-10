@@ -1,4 +1,4 @@
-import type { UnixTimeMs } from "@clean-chat/domain";
+import type { UnixTimeMs } from "@clean-chat/core/domain";
 
 /** Current time for `createdAt`, typing expiry, and similar. Not transactional. */
 export interface Clock {

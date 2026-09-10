@@ -1,9 +1,10 @@
 /**
- * Domain layer — enterprise business rules.
+ * Domain — enterprise business rules.
  *
  * Entities are **plain types** inferred from TypeBox schemas (`XxxSchema` →
- * `type Xxx`). This package may depend on `typebox` (`@sinclair/typebox`) and
- * must not import other workspace packages or I/O.
+ * `type Xxx`). Import from `@clean-chat/core/domain`. This folder may depend
+ * on TypeBox (`@sinclair/typebox`) and must not import `use-cases`, `events`,
+ * other workspace packages, or I/O.
  */
 
 export {

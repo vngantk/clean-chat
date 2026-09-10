@@ -1,4 +1,4 @@
-import type { User } from "@clean-chat/domain";
+import type { User } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 
 /** Thrown when a write is called without a session. */

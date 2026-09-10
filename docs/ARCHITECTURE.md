@@ -10,16 +10,18 @@ Uncle Bob’s circles, named to match how we will build:
 
 | Circle | Package | Responsibility |
 | --- | --- | --- |
-| Entities | `@clean-chat/domain` | Channel / message / user rules that would still be true on another UI |
-| Contracts | `@clean-chat/contracts` | Driving use cases (`src/use-cases/`), `AppEvent`, `EventSubscriber` |
+| Core | `@clean-chat/core` | Domain entities (`src/domain/`), driving use cases (`src/use-cases/`), `AppEvent` + `EventSubscriber` (`src/events/`) |
 | Application | `@clean-chat/application` | Interactors (`src/interactors/`) plus driven ports |
 | Frameworks & drivers | `@clean-chat/infrastructure` | In-memory DB/auth/events, Express HTTP, `createBackend`, React later |
 
 ```
-  infrastructure  ──►  application  ──►  contracts  ──►  domain
-        │                    │                │
-        └─────────────────────┴────────────────────┘
-              dependencies point inward only
+  infrastructure  ──►  application  ──►  core
+        │                    │
+        └────────────────────┘
+      dependencies point inward only
+
+  core → nothing except TypeBox
+  domain folder must not import use-cases or events
 ```
 
 A use case must not import Postgres, React, or a websocket library. Those appear later as **adapters** that implement ports defined inward.
@@ -62,9 +64,9 @@ Query use cases are one-shot. Live UI: `EventSubscriber.subscribe` then re-run t
 | `HeartbeatPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (membership only) |
 | `DisconnectPresence` | `{ channelId, sessionId }` | `void` | `presence-changed` (if membership) |
 
-`EventPublisher` (application) and `EventSubscriber` (contracts) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
+`EventPublisher` (application) and `EventSubscriber` (core) are the same in-memory adapter (`createInMemoryEventBus`). Call `publish` **after** `UnitOfWork.run` commits.
 
-Interactors implement every `UseCase` in `@clean-chat/contracts/use-cases`. Persistence is in-memory (`packages/infrastructure/src/memory/`).
+Interactors implement every `UseCase` in `@clean-chat/core/use-cases`. Persistence is in-memory (`packages/infrastructure/src/memory/`).
 
 ## Outbound ports
 
@@ -109,14 +111,13 @@ execute
 
 | Path | Role |
 | --- | --- |
-| `packages/domain/src/user/` | `User`, email, display name, password length |
-| `packages/domain/src/channel/` | `Channel`, slug normalize + pattern |
-| `packages/domain/src/message/` | `Message`, body limits |
-| `packages/domain/src/typing/` | `Typing`, debounce / expiry constants |
-| `packages/domain/src/presence/` | `Presence`, session id |
-| `packages/contracts/src/use-cases/` | Driving ports: import as `@clean-chat/contracts/use-cases` |
-| `packages/contracts/src/events.ts` | `AppEvent` payloads |
-| `packages/contracts/src/event-subscriber.ts` | `EventSubscriber` (UI listens) |
+| `packages/core/src/domain/user/` | `User`, email, display name, password length |
+| `packages/core/src/domain/channel/` | `Channel`, slug normalize + pattern |
+| `packages/core/src/domain/message/` | `Message`, body limits |
+| `packages/core/src/domain/typing/` | `Typing`, debounce / expiry constants |
+| `packages/core/src/domain/presence/` | `Presence`, session id |
+| `packages/core/src/use-cases/` | Driving ports: import as `@clean-chat/core/use-cases` |
+| `packages/core/src/events/` | `AppEvent` payloads and `EventSubscriber` (UI listens) |
 | `packages/application/src/` | `EventPublisher`, `UnitOfWork`, `AuthPort`, `Clock`, `IdGenerator` |
 | `packages/application/src/repositories/` | Channel, Message, User, Typing, Presence repositories |
 | `packages/application/src/interactors/` | `UseCase.execute` implementations |

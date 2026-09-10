@@ -2,7 +2,7 @@ import type {
   ChannelId,
   Presence,
   SessionId,
-} from "@clean-chat/domain";
+} from "@clean-chat/core/domain";
 import type { TransactionContext } from "../transaction.js";
 
 /**

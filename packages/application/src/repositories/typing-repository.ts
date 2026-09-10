@@ -1,4 +1,4 @@
-import type { ChannelId, Typing, UserId } from "@clean-chat/domain";
+import type { ChannelId, Typing, UserId } from "@clean-chat/core/domain";
 import type { TransactionContext } from "../transaction.js";
 
 /**

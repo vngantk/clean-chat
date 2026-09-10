@@ -1,5 +1,5 @@
-import type { ListTyping } from "@clean-chat/contracts/use-cases";
-import { TYPING_EXPIRE_MS } from "@clean-chat/domain";
+import type { ListTyping } from "@clean-chat/core/use-cases";
+import { TYPING_EXPIRE_MS } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { Clock } from "../clock.js";
 import type { TypingRepository } from "../repositories/typing-repository.js";

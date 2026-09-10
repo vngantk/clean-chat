@@ -1,4 +1,4 @@
-import type { AppEvent, EventSubscriber } from "@clean-chat/contracts";
+import type { AppEvent, EventSubscriber } from "@clean-chat/core";
 
 function isAbortError(err: unknown): boolean {
   return err instanceof Error && err.name === "AbortError";

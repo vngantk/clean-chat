@@ -1,5 +1,5 @@
 import { type Server } from "node:http";
-import type { AppEvent, EventSubscriber } from "@clean-chat/contracts";
+import type { AppEvent, EventSubscriber } from "@clean-chat/core";
 import express from "express";
 import { afterEach, describe, expect, it } from "vitest";
 import { createExpressEventSubscriptionRouter } from "../src/http/index.js";

@@ -1,5 +1,5 @@
 import type { EventPublisher } from "@clean-chat/application";
-import type { AppEvent, EventSubscriber } from "@clean-chat/contracts";
+import type { AppEvent, EventSubscriber } from "@clean-chat/core";
 
 /**
  * In-process event bus: interactors {@link EventPublisher.publish} after

@@ -1,6 +1,6 @@
-import { channelListChanged } from "@clean-chat/contracts";
-import type { EnsureGeneralChannel } from "@clean-chat/contracts/use-cases";
-import { GENERAL_CHANNEL_NAME } from "@clean-chat/domain";
+import { channelListChanged } from "@clean-chat/core";
+import type { EnsureGeneralChannel } from "@clean-chat/core/use-cases";
+import { GENERAL_CHANNEL_NAME } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { EventPublisher } from "../event-publisher.js";
 import type { IdGenerator } from "../id-generator.js";

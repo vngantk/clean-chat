@@ -1,5 +1,5 @@
-import type { ListChannels } from "@clean-chat/contracts/use-cases";
-import { compareChannels } from "@clean-chat/domain";
+import type { ListChannels } from "@clean-chat/core/use-cases";
+import { compareChannels } from "@clean-chat/core/domain";
 import type { AuthPort } from "../auth.js";
 import type { ChannelRepository } from "../repositories/channel-repository.js";
 import type { UnitOfWork } from "../transaction.js";

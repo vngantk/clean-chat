@@ -1,5 +1,5 @@
 import { Type, type Static } from "@sinclair/typebox";
-import { ChannelIdSchema, type ChannelId } from "@clean-chat/domain";
+import { ChannelIdSchema, type ChannelId } from "../domain/index.js";
 
 /**
  * Sidebar channel list is stale. Subscribers re-run `ListChannels`.
