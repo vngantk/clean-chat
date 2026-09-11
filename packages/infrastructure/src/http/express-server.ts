@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { type Server } from "node:http";
+import path from "node:path";
 import cors from "cors";
 import express, {
   type Express,
@@ -10,8 +12,9 @@ import type { Lifecycle } from "./lifecycle.js";
 
 /**
  * Browser origins allowed to call this server. `"*"` (the default on
- * loopback) allows any `Origin`. An empty list disables CORS headers
- * (same-origin only). Off-loopback binds require an explicit allowlist.
+ * loopback when no SPA is served) allows any `Origin`. An empty list
+ * disables CORS headers (same-origin only; the default when serving a
+ * SPA). Off-loopback binds without a SPA require an explicit allowlist.
  */
 export type CorsOrigins = "*" | readonly string[];
 
@@ -20,14 +23,22 @@ export type ExpressServerDeps = {
   port: number;
   host?: string;
   /**
-   * CORS allowlist. Default `"*"` on loopback. Restrict to the UI
-   * origin(s) when they are known. Cookie credentials are not used; the
-   * UI sends `Authorization: Bearer`. Binding off loopback with `"*"`
-   * throws.
+   * CORS allowlist. Default `"*"` on loopback when no SPA is served.
+   * Serving {@link staticDir} defaults to `[]` (same-origin). Cookie
+   * credentials are not used; the UI sends `Authorization: Bearer`.
+   * Binding off loopback with `"*"` throws.
    */
   corsOrigins?: CorsOrigins;
   /** Ran after CORS and before routers (e.g. bearer session context). */
   middleware?: readonly RequestHandler[];
+  /**
+   * Built SPA directory (Vite `dist`). Served after API routers so
+   * `GET /` is the UI on the same origin as `/use-cases` and `/events`.
+   * Missing files without an extension fall back to `index.html`.
+   * When set and {@link corsOrigins} is omitted, CORS is same-origin
+   * (`[]`) so the process can bind off loopback without `CORS_ORIGIN`.
+   */
+  staticDir?: string;
 };
 
 /**
@@ -49,12 +60,15 @@ export type ExpressServer = Lifecycle & {
 
 /**
  * Builds an Express app, applies security headers and CORS, mounts each
- * router at its map key (`app.use(path, router)`), and listens on `port`
- * / `host` in {@link Lifecycle.start}.
+ * router at its map key (`app.use(path, router)`), optionally serves a
+ * built SPA from {@link ExpressServerDeps.staticDir}, and listens on
+ * `port` / `host` in {@link Lifecycle.start}.
  */
 export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   const host = deps.host ?? "127.0.0.1";
-  assertCorsForHost(host, deps.corsOrigins);
+  const corsOrigins =
+    deps.corsOrigins ?? (deps.staticDir === undefined ? undefined : []);
+  assertCorsForHost(host, corsOrigins);
   const app = express();
   app.disable("x-powered-by");
   app.use((_req, res, next) => {
@@ -66,7 +80,7 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   });
   app.use(
     cors({
-      origin: corsOrigin(deps.corsOrigins),
+      origin: corsOrigin(corsOrigins),
       methods: ["GET", "POST"],
       allowedHeaders: ["Content-Type", "Authorization"],
       exposedHeaders: ["Authorization"],
@@ -77,8 +91,11 @@ export function createExpressServer(deps: ExpressServerDeps): ExpressServer {
   for (const handler of deps.middleware ?? []) {
     app.use(handler);
   }
-  for (const [path, router] of Object.entries(deps.routers)) {
-    app.use(path === "" ? "/" : path, router);
+  for (const [mountPath, router] of Object.entries(deps.routers)) {
+    app.use(mountPath === "" ? "/" : mountPath, router);
+  }
+  if (deps.staticDir !== undefined) {
+    mountSpaStatic(app, deps.staticDir, Object.keys(deps.routers));
   }
   app.use(httpErrorHandler);
   let httpServer: Server | undefined;
@@ -182,4 +199,48 @@ function corsOrigin(
     return false;
   }
   return [...origins];
+}
+
+/**
+ * Serve hashed Vite assets from `dir`, then `index.html` for GET/HEAD
+ * that are not API mounts and have no file extension.
+ */
+function mountSpaStatic(
+  app: Express,
+  dir: string,
+  routerPaths: readonly string[],
+): void {
+  const resolved = path.resolve(dir);
+  const indexHtml = path.join(resolved, "index.html");
+  if (!existsSync(indexHtml)) {
+    throw new Error(`SPA index.html not found: ${indexHtml}`);
+  }
+  const apiPrefixes = routerPaths
+    .map((mount) => (mount === "" ? "/" : mount))
+    .filter((mount) => mount !== "/");
+
+  app.use(express.static(resolved));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+    if (apiPrefixes.some((prefix) => isUnderPrefix(req.path, prefix))) {
+      next();
+      return;
+    }
+    if (path.extname(req.path) !== "") {
+      next();
+      return;
+    }
+    res.sendFile(indexHtml, (err) => {
+      if (err) {
+        next(err);
+      }
+    });
+  });
+}
+
+function isUnderPrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }

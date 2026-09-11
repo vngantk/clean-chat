@@ -4,7 +4,8 @@
  * Persistence: in-memory (`src/memory/`) and SQLite (`src/sql/`, libSQL).
  * HTTP is Express routers (`src/http/`): `POST /{useCaseName}` invokes a
  * `UseCase`; `GET /{eventType}` is SSE via `EventSubscriber`.
- * `createExpressServer` mounts those routers and implements {@link Lifecycle}.
+ * `createExpressServer` mounts those routers (and optionally a built SPA)
+ * and implements {@link Lifecycle}.
  * In-memory events are {@link createInMemoryEventBus} (`EventPublisher` +
  * `EventSubscriber`). The isomorphic HTTP driving adapter is
  * `@clean-chat/client` (`createHttpClient`). {@link createInMemoryAuth}

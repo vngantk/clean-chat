@@ -9,9 +9,13 @@ import "./index.css";
 
 /**
  * Origin of the Express composition root.
- * Override with `VITE_API_URL` (no trailing slash required).
+ * Vite `dev` defaults to `http://127.0.0.1:3000`. Production builds
+ * default to same-origin so Express can serve this SPA. Override with
+ * `VITE_API_URL` (no trailing slash required) for a split UI origin.
  */
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:3000";
+const apiUrl =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? "" : "http://127.0.0.1:3000");
 
 const client = createHttpClient({
   baseUrl: apiUrl,

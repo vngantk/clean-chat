@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import express from "express";
 import { afterEach, describe, expect, it } from "vitest";
 import { createExpressServer, type ExpressServer } from "../src/http/index.js";
@@ -20,10 +23,14 @@ function echoRouter() {
 
 describe("createExpressServer", () => {
   let server: ExpressServer | undefined;
+  const spaDirs: string[] = [];
 
   afterEach(async () => {
     await server?.stop();
     server = undefined;
+    for (const dir of spaDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("mounts each router at its path and serves requests", async () => {
@@ -215,4 +222,77 @@ describe("createExpressServer", () => {
       }),
     ).not.toThrow();
   });
+
+  it("serves a built SPA after API routers on the same origin", async () => {
+    const staticDir = writeSpaFixture();
+    spaDirs.push(staticDir);
+    server = createExpressServer({
+      routers: { "/api": pingRouter() },
+      port: 0,
+      staticDir,
+    });
+    await server.start();
+    const origin = `http://127.0.0.1:${String(server.port)}`;
+
+    const index = await fetch(`${origin}/`, {
+      headers: { Origin: "http://localhost:5173" },
+    });
+    expect(index.status).toBe(200);
+    expect(index.headers.get("content-type")).toMatch(/html/);
+    expect(index.headers.get("access-control-allow-origin")).toBeNull();
+    await expect(index.text()).resolves.toContain("SPA fixture");
+
+    const asset = await fetch(`${origin}/app.js`);
+    expect(asset.status).toBe(200);
+    await expect(asset.text()).resolves.toBe("console.log(1);\n");
+
+    const fallback = await fetch(`${origin}/not-a-route`);
+    expect(fallback.status).toBe(200);
+    await expect(fallback.text()).resolves.toContain("SPA fixture");
+
+    const missingAsset = await fetch(`${origin}/missing.js`);
+    expect(missingAsset.status).toBe(404);
+
+    const api = await fetch(`${origin}/api/ping`);
+    expect(api.status).toBe(204);
+
+    const apiMiss = await fetch(`${origin}/api/missing`);
+    expect(apiMiss.status).toBe(404);
+    await expect(apiMiss.text()).resolves.not.toContain("SPA fixture");
+  });
+
+  it("throws when the SPA directory has no index.html", () => {
+    const staticDir = mkdtempSync(path.join(tmpdir(), "clean-chat-spa-"));
+    spaDirs.push(staticDir);
+    expect(() =>
+      createExpressServer({
+        routers: {},
+        port: 0,
+        staticDir,
+      }),
+    ).toThrow(/index\.html not found/);
+  });
+
+  it("allows off-loopback binds when serving the SPA without CORS_ORIGIN", () => {
+    const staticDir = writeSpaFixture();
+    spaDirs.push(staticDir);
+    expect(() =>
+      createExpressServer({
+        routers: {},
+        port: 0,
+        host: "0.0.0.0",
+        staticDir,
+      }),
+    ).not.toThrow();
+  });
 });
+
+function writeSpaFixture(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "clean-chat-spa-"));
+  writeFileSync(
+    path.join(dir, "index.html"),
+    "<!doctype html><title>SPA fixture</title>",
+  );
+  writeFileSync(path.join(dir, "app.js"), "console.log(1);\n");
+  return dir;
+}

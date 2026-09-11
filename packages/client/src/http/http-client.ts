@@ -41,8 +41,10 @@ export type TokenStore = {
 export type HttpClientOptions = {
   /**
    * Origin of the composition root, e.g. `http://127.0.0.1:3000`.
-   * Trailing slashes are ignored. Use cases are `POST {baseUrl}/use-cases/{name}`;
-   * events are `GET {baseUrl}/events` (one multiplexed SSE for every type).
+   * Trailing slashes are ignored. Empty string is same-origin (relative
+   * `/use-cases` and `/events` URLs). Use cases are
+   * `POST {baseUrl}/use-cases/{name}`; events are `GET {baseUrl}/events`
+   * (one multiplexed SSE for every type).
    */
   baseUrl: string;
   /** Optional persistence for the session bearer (browser `localStorage`). */

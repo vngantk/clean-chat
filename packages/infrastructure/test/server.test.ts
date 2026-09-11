@@ -1,15 +1,21 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createHttpClient } from "@clean-chat/client";
 import { SignUpName } from "@clean-chat/core/use-cases";
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer } from "../src/server.js";
-import {Lifecycle} from "../src";
 
 describe("createServer", () => {
   let server: ReturnType<typeof createServer> | undefined;
+  const spaDirs: string[] = [];
 
   afterEach(async () => {
     await server?.stop();
     server = undefined;
+    for (const dir of spaDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("wires auth and channels over HTTP", async () => {
@@ -149,5 +155,32 @@ describe("createServer", () => {
         name: "C",
       }),
     ).rejects.toThrow("Too many requests");
+  });
+
+  it("serves the SPA on the same origin as use cases", async () => {
+    const staticDir = mkdtempSync(path.join(tmpdir(), "clean-chat-spa-"));
+    spaDirs.push(staticDir);
+    writeFileSync(
+      path.join(staticDir, "index.html"),
+      "<!doctype html><title>Clean Chat SPA</title>",
+    );
+    server = createServer({ port: 0, staticDir });
+    await server.start();
+    const origin = `http://${server.host}:${String(server.port)}`;
+
+    const page = await fetch(`${origin}/`);
+    expect(page.status).toBe(200);
+    await expect(page.text()).resolves.toContain("Clean Chat SPA");
+
+    const client = createHttpClient({ baseUrl: origin });
+    const user = await client.signUp.execute({
+      email: "ada@example.com",
+      password: "password1",
+      name: "Ada",
+    });
+    expect(user.email).toBe("ada@example.com");
+
+    const useCaseGet = await fetch(`${origin}/use-cases/${SignUpName}`);
+    expect(useCaseGet.status).toBe(404);
   });
 });

@@ -24,8 +24,18 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the dependency rule and how
 
 You need Node 20+.
 
+**One process (deploy / local demo):**
+
 ```bash
 npm install
+npm start
+```
+
+That builds the TypeScript packages and the Vite SPA, then serves both from Express on `http://127.0.0.1:3000`. Open that URL in the browser. The SPA talks to `/use-cases` and `/events` on the same origin (`VITE_API_URL` is empty in production builds).
+
+**Two processes (Vite HMR while developing the UI):**
+
+```bash
 npm run dev
 ```
 
@@ -34,22 +44,24 @@ That starts:
 1. Express on `http://127.0.0.1:3000` (`PORT` / `HOST` override)
 2. The Vite SPA on http://localhost:5173 (`VITE_API_URL` defaults to `http://127.0.0.1:3000`)
 
-CORS allows any browser origin on loopback (`CORS_ORIGIN=*`); set `CORS_ORIGIN` to a comma-separated allowlist to restrict it, and you must set an allowlist if `HOST` is not loopback.
+CORS allows any browser origin on loopback (`CORS_ORIGIN=*`) when the SPA is not served from Express. `npm start` serves the SPA from the same origin, so CORS headers are omitted (same-origin). Set `CORS_ORIGIN` to a comma-separated allowlist to allow extra UI origins. Binding off loopback without the SPA still requires an allowlist (`CORS_ORIGIN=same-origin` disables CORS headers). `STATIC_DIR` overrides the Vite `dist` path; `STATIC_DIR=off` is API-only.
 
 `npm start` / `npm run dev` use SQLite at `file:./clean-chat.db`. Override with `SQLITE_URL`. Tests still call `createServer()` with in-memory persistence unless they pass `createSqlPersistence()`.
 
 Open two browser windows, sign up as two users, and watch messages, typing, and who’s-online update without refresh.
 
-API-only (no UI): `npm start`. Use cases are `POST /use-cases/{name}`; events are `GET /events` (SSE, all types, bearer required).
+API-only (no UI): `npm run start:api`. Use cases are `POST /use-cases/{name}`; events are `GET /events` (SSE, all types, bearer required).
 
 ## Scripts
 
-- `npm run dev` — Express + Vite frontend together
+- `npm start` — build packages + SPA and serve both from Express
+- `npm run start:api` — Express only (`STATIC_DIR=off`)
+- `npm run dev` — Express + Vite frontend together (HMR)
 - `npm run dev:frontend` / `npm run dev:server` — each process on its own (`npm run dev:types` if you want `tsc -b` watching)
 - `npm run typecheck` — `tsc -b` across core/application/infrastructure/client, plus the web app
 - `npm test` — Vitest (interactors + in-memory and SQLite persistence + Express HTTP + HTTP client)
 - `npm run test:coverage` — same tests with a text, HTML, and LCOV coverage report in `coverage/`
 - `npm run build` — emit `packages/{core,application,infrastructure,client}/dist`
+- `npm run build:web` — Vite production build (`packages/web/dist`)
 - `npm run lint` — oxlint
 - `npm run clean` — remove build output
-- `npm start` — build and run the Express composition root (no Vite)

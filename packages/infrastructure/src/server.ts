@@ -85,6 +85,11 @@ export type ServerOptions = {
   jsonBodyLimit?: string;
   /** Defaults to in-memory. Pass `createSqlPersistence()` for SQLite. */
   persistence?: PersistencePorts;
+  /**
+   * Built SPA directory served at `/` (same origin as the API).
+   * Omit for API-only (tests and `STATIC_DIR=off`).
+   */
+  staticDir?: string;
 };
 
 /**
@@ -160,6 +165,9 @@ export function createServer(options: ServerOptions = {}): ExpressServer {
     ...(options.corsOrigins === undefined
       ? {}
       : { corsOrigins: options.corsOrigins }),
+    ...(options.staticDir === undefined
+      ? {}
+      : { staticDir: options.staticDir }),
   });
 
   let presenceTimer: ReturnType<typeof setInterval> | undefined;

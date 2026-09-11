@@ -2,7 +2,7 @@
 
 How **clean-chat** will implement [PRODUCT.md](./PRODUCT.md). Copy **behavior**, not Convex APIs. Entity shapes and TypeBox conventions: [DOMAIN.md](./DOMAIN.md).
 
-This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence adapters are **in-memory** (`src/memory/`) and **SQLite** (`src/sql/`, libSQL). HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. The SPA is Vite + React in `@clean-chat/web` (Tailwind 4, shadcn/ui `base-nova`, same look as convex-chat).
+This document describes the intended dependency rule. Domain entities and use-case Input/Output exist as TypeBox schemas. Writes run inside `UnitOfWork.run`, then publish explicit `AppEvent`s. Persistence adapters are **in-memory** (`src/memory/`) and **SQLite** (`src/sql/`, libSQL). HTTP is Express: `createExpressUseCaseRouter` (`POST /{useCase.name}` → `UseCase.execute`), `createExpressEventSubscriptionRouter` (`GET /{eventType}` SSE → `EventSubscriber`), and `createExpressServer` (path→router map, `Lifecycle`, CORS, optional SPA `staticDir`). `createServer` is the composition root. Known use-case errors map to 401 / 403 / 400; unexpected errors are 500 without a stack. SSE requires a bearer session. The UI talks through `@clean-chat/client` (`createHttpClient`). Not a public REST API. The SPA is Vite + React in `@clean-chat/web` (Tailwind 4, shadcn/ui `base-nova`, same look as convex-chat). `npm start` serves that build from Express so one process is enough to deploy.
 
 ## Why these layers
 
@@ -31,16 +31,21 @@ A use case must not import Postgres, React, or a websocket library. Those appear
 ## Runtime
 
 ```
-Browser (Vite SPA, localhost:5173)
-  └─ createHttpClient (POST use cases + SSE) ─► Express (127.0.0.1:3000)
-                                                      ├─ use cases
-                                                      ├─ persistence adapter
-                                                      ├─ auth / sessions
-                                                      ├─ typing expiry (TTL on read; UI also hides stale rows)
-                                                      └─ presence heartbeats (client, 10s)
+npm start (one process)
+  Browser ─► Express (127.0.0.1:3000)
+               ├─ GET /          Vite SPA (packages/web/dist)
+               ├─ POST /use-cases createHttpClient (same origin)
+               ├─ GET /events    SSE
+               ├─ persistence, auth / sessions
+               ├─ typing expiry (TTL on read; UI also hides stale rows)
+               └─ presence heartbeats (client, 10s)
+
+npm run dev (HMR)
+  Browser (Vite SPA, localhost:5173, VITE_API_URL=http://127.0.0.1:3000)
+    └─ createHttpClient ─► Express (127.0.0.1:3000)
 ```
 
-`VITE_API_URL` defaults to `http://127.0.0.1:3000`. Convex mapped `query` → live read and `mutation` → transactional write. This port preserves that **user-visible** contract (see PRODUCT.md realtime section): subscribe to `AppEvent`s, then re-run the matching query use case.
+Production builds leave `VITE_API_URL` empty so the client uses same-origin `/use-cases` and `/events`. Vite `dev` still defaults to `http://127.0.0.1:3000`. Convex mapped `query` → live read and `mutation` → transactional write. This port preserves that **user-visible** contract (see PRODUCT.md realtime section): subscribe to `AppEvent`s, then re-run the matching query use case.
 
 ## Use cases
 
@@ -106,9 +111,9 @@ execute
 | Selected `channelId` | Presentation state, not a router |
 | HTTP `POST /{useCase.name}` | Infrastructure Express router (`createExpressUseCaseRouter`). `void` Output → 204. Known errors → 401/403/400 `{ error }`; unexpected → 500 `Internal server error`. `sign-in`/`sign-up` are rate-limited; JSON body cap 16kb |
 | HTTP `GET /events` SSE | Infrastructure Express router (`createExpressEventSubscriptionRouter`) → `EventSubscriber`. Multiplexed `GET /` streams every type (the SPA uses this so one tab is one HTTP/1.1 socket). `GET /{eventType}` remains. Requires a bearer session; concurrent streams are capped per token (default 16) |
-| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` / composition root `createServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`). Bound address is `server.port` / `server.host` after `start`. `*` CORS only on loopback; Helmet-equivalent headers |
-| HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Optional `tokenStore`. Non-OK responses throw the `{ error }` string. SSE reconnects with backoff. Use-case POSTs use `keepalive` |
-| Chat SPA | `@clean-chat/web` Vite + React. `ClientProvider` + live query / presence hooks. Selected channel is React state. Bearer in `localStorage` |
+| HTTP listen / `Lifecycle` | Infrastructure `createExpressServer` / composition root `createServer` (path → router, `port`, optional `host`, optional `corsOrigins`, optional `middleware`, optional `staticDir`). Bound address is `server.port` / `server.host` after `start`. `*` CORS only on loopback; serving the SPA defaults to same-origin CORS. Helmet-equivalent headers. `npm start` serves `packages/web/dist` |
+| HTTP client (`Client`) | `@clean-chat/client` `createHttpClient` (`fetch`). `createHttpUseCase`, `createHttpEventSubscriber`. Optional `tokenStore`. Non-OK responses throw the `{ error }` string. SSE reconnects with backoff. Use-case POSTs use `keepalive`. Empty `baseUrl` is same-origin |
+| Chat SPA | `@clean-chat/web` Vite + React. `ClientProvider` + live query / presence hooks. Selected channel is React state. Bearer in `localStorage`. Production build is served by Express at `/` |
 
 ## File map (now)
 
@@ -127,12 +132,12 @@ execute
 | `packages/application/test/` | Interactor unit tests (mocked ports) |
 | `packages/infrastructure/src/memory/` | In-memory `UnitOfWork`, repositories, `createInMemoryEventBus`, `createInMemoryAuth`, `createSystemClock`, `createRandomIdGenerator` |
 | `packages/infrastructure/src/sql/` | SQLite `UnitOfWork` and repositories (`createSqlPersistence`, libSQL) |
-| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers |
+| `packages/infrastructure/src/http/` | Express `createExpressServer` (`Lifecycle`) + use-case and event-subscription routers; optional SPA `staticDir` |
 | `packages/client/src/http/` | `createHttpClient`, `createHttpUseCase`, `createHttpEventSubscriber` (isomorphic `fetch`) |
 | `packages/client/src/index.ts` | Driving `Client` type + HTTP transport |
 | `packages/infrastructure/src/index.ts` | Drivers + composition root |
 | `packages/infrastructure/src/server.ts` | `createServer` wires adapters, interactors, Express |
-| `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST` |
+| `packages/infrastructure/src/main.ts` | Process entry: listen on `PORT` / `HOST`; serve SPA from `STATIC_DIR` or `packages/web/dist` |
 | `packages/web/` | Vite + React SPA (`src/components/`, live-query and presence hooks) |
 | `docs/PRODUCT.md` | Behavior to match |
 
