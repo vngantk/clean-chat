@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>clean-chat vs convex-chat</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f4f5;
+      --surface: #ffffff;
+      --elevated: #ffffff;
+      --text: #18181b;
+      --text-2: #3f3f46;
+      --text-3: #71717a;
+      --stroke: #e4e4e7;
+      --stroke-2: #d4d4d8;
+      --fill: #f4f4f5;
+      --fill-2: #e4e4e7;
+      --accent: #2563eb;
+      --accent-fg: #ffffff;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --warning: #a16207;
+      --warning-bg: #fef9c3;
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --info: #1d4ed8;
+      --info-bg: #dbeafe;
+      --neutral-bg: #f4f4f5;
+      --chart-clean: #3b82f6;
+      --chart-convex: #a1a1aa;
+      --radius: 8px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #18181b;
+        --surface: #27272a;
+        --elevated: #3f3f46;
+        --text: #fafafa;
+        --text-2: #d4d4d8;
+        --text-3: #a1a1aa;
+        --stroke: #3f3f46;
+        --stroke-2: #52525b;
+        --fill: #3f3f46;
+        --fill-2: #52525b;
+        --accent: #60a5fa;
+        --accent-fg: #18181b;
+        --success: #4ade80;
+        --success-bg: #14532d;
+        --warning: #facc15;
+        --warning-bg: #422006;
+        --danger: #f87171;
+        --danger-bg: #7f1d1d;
+        --info: #93c5fd;
+        --info-bg: #1e3a8a;
+        --neutral-bg: #3f3f46;
+        --chart-clean: #60a5fa;
+        --chart-convex: #71717a;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    h1 { font-size: 24px; font-weight: 650; margin: 0 0 8px; letter-spacing: -0.02em; }
+    h2 { font-size: 18px; font-weight: 650; margin: 28px 0 12px; }
+    h3 { font-size: 15px; font-weight: 650; margin: 24px 0 10px; }
+    p { margin: 0 0 12px; }
+    p.lede { color: var(--text-2); }
+    p.muted { color: var(--text-3); font-size: 13px; }
+    p.small { font-size: 13px; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--fill);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .callout {
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin: 16px 0;
+      background: var(--surface);
+    }
+    .callout .title { font-weight: 650; margin-bottom: 4px; }
+    .callout.info { border-left: 3px solid var(--info); background: var(--info-bg); }
+    .callout.warning { border-left: 3px solid var(--warning); background: var(--warning-bg); }
+    .callout.danger { border-left: 3px solid var(--danger); background: var(--danger-bg); }
+    .callout.success { border-left: 3px solid var(--success); background: var(--success-bg); }
+    .callout.neutral { border-left: 3px solid var(--stroke-2); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat {
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 12px 14px;
+    }
+    .stat .value { font-size: 20px; font-weight: 650; }
+    .stat .label { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .stat.success .value { color: var(--success); }
+    .stat.warning .value { color: var(--warning); }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 20px;
+    }
+    .tab {
+      appearance: none;
+      border: 1px solid var(--stroke);
+      background: var(--surface);
+      color: var(--text-2);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tab[aria-selected="true"] {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+    .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .panel[hidden] { display: none; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .card-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--stroke);
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    .card-b { padding: 14px; }
+    .pill {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--fill);
+      color: var(--text-2);
+    }
+    .pill.on {
+      background: var(--accent);
+      color: var(--accent-fg);
+    }
+
+    .layers { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+    .layer {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--stroke);
+      background: var(--elevated);
+      font-size: 12px;
+      color: var(--text-2);
+    }
+    .layer:first-child { background: var(--fill); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--stroke);
+    }
+    th {
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--text-3);
+      background: var(--fill);
+    }
+    tr:last-child td { border-bottom: none; }
+    .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: var(--text-3);
+      vertical-align: middle;
+    }
+    .tone-success .dot { background: var(--success); }
+    .tone-info .dot { background: var(--info); }
+    .tone-warning .dot { background: var(--warning); }
+
+    .chart {
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 16px 16px 8px;
+    }
+    .chart-title {
+      font-size: 13px;
+      font-weight: 650;
+      margin-bottom: 4px;
+    }
+    .chart svg { width: 100%; height: auto; display: block; }
+    .legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 8px;
+    }
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+
+    .bar-wrap { margin: 8px 0 16px; }
+    .bar {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--fill);
+      margin: 6px 0;
+    }
+    .bar .you { background: var(--accent); }
+    .bar .plat { background: var(--fill-2); }
+
+    .source { margin-top: 32px; color: var(--text-3); font-size: 12px; }
+
+    @media (max-width: 720px) {
+      .stats, .cards { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .stats, .cards { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>clean-chat vs convex-chat</h1>
+    <p class="lede">Same Slack-style chat product (<code>docs/PRODUCT.md</code>). Different bets: Convex Chat leans on a managed backend; Clean Chat makes every boundary explicit. Both are learning demos, not production messengers.</p>
+
+    <div class="callout info">
+      <div class="title">Headline</div>
+      Clean Chat is easier to change, test, and reason about. Convex Chat is harder to break in production because the platform owns transactions, durable auth, live reconnect, and scheduling. Security is split: Clean Chat hardens the HTTP edge; Convex Chat persists credentials and sessions.
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="value">18 vs 0</div>
+        <div class="label">Automated test files</div>
+      </div>
+      <div class="stat">
+        <div class="value">5 vs 1</div>
+        <div class="label">Packages vs single app</div>
+      </div>
+      <div class="stat warning">
+        <div class="value">Split</div>
+        <div class="label">Robustness and security</div>
+      </div>
+      <div class="stat success">
+        <div class="value">clean-chat</div>
+        <div class="label">Maintainability winner</div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Comparison pillars">
+      <button class="tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
+      <button class="tab" role="tab" id="tab-robustness" aria-controls="panel-robustness" aria-selected="false">Robustness</button>
+      <button class="tab" role="tab" id="tab-security" aria-controls="panel-security" aria-selected="false">Security</button>
+      <button class="tab" role="tab" id="tab-maintainability" aria-controls="panel-maintainability" aria-selected="false">Maintainability</button>
+    </div>
+
+    <section class="panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="cards">
+        <article class="card">
+          <div class="card-h">clean-chat <span class="pill on">This repo</span></div>
+          <div class="card-b">
+            <p class="small lede">Clean Architecture. You own the HTTP server, persistence, auth, and events.</p>
+            <div class="layers">
+              <div class="layer">web (Vite SPA)</div>
+              <div class="layer">client (fetch + SSE)</div>
+              <div class="layer">infrastructure (Express, SQLite)</div>
+              <div class="layer">application (interactors, ports)</div>
+              <div class="layer">core (TypeBox domain + use cases)</div>
+            </div>
+            <p class="small">Dependencies point inward. UI talks to a <code>Client</code> interface, not Express. Persistence is a port: in-memory for tests, SQLite in <code>main.ts</code>.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-h">convex-chat <span class="pill">Reference product</span></div>
+          <div class="card-b">
+            <p class="small lede">Convex Cloud. Queries, mutations, scheduler, Auth, and Presence are platform primitives.</p>
+            <div class="layers">
+              <div class="layer">src (Vite SPA + useQuery)</div>
+              <div class="layer">convex/ functions</div>
+              <div class="layer">Convex Auth + Presence</div>
+              <div class="layer">document DB + scheduler</div>
+              <div class="layer">generated api / dataModel types</div>
+            </div>
+            <p class="small">No REST chat API. The UI imports <code>api.*</code> and <code>useQuery</code>. Swapping the backend is a UI rewrite.</p>
+          </div>
+        </article>
+      </div>
+
+      <h2>Verdict by pillar</h2>
+      <table>
+        <thead>
+          <tr><th>Pillar</th><th>Winner</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tone-warning"><td><span class="dot"></span>Robustness</td><td>Split</td><td>Clean Chat tests and maps failures; Convex survives restarts, reconnects, and concurrent writes via the platform.</td></tr>
+          <tr class="tone-warning"><td><span class="dot"></span>Security</td><td>Split</td><td>Clean Chat authenticates SSE and presence disconnect, caps JSON, and rate-limits login. Convex persists scrypt hashes, JWTs, and auth rate-limit tables.</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Maintainability</td><td>clean-chat</td><td>Ports, schema-first validation, composition root, and 18 test files. Convex is smaller but locked to generated APIs.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Inventory (factual, not a quality score)</h2>
+      <div class="chart">
+        <div class="chart-title">Test files, packages, and hand-written TypeScript</div>
+        <svg viewBox="0 0 640 240" role="img" aria-label="Bar chart of inventory counts">
+          <text x="8" y="18" fill="currentColor" font-size="11" opacity="0.55">Count</text>
+          <!-- y ticks: 0, 40, 80, 120, 160 -->
+          <g stroke="currentColor" stroke-opacity="0.12">
+            <line x1="56" y1="24" x2="624" y2="24" />
+            <line x1="56" y1="64" x2="624" y2="64" />
+            <line x1="56" y1="104" x2="624" y2="104" />
+            <line x1="56" y1="144" x2="624" y2="144" />
+            <line x1="56" y1="184" x2="624" y2="184" />
+          </g>
+          <g fill="currentColor" font-size="11" opacity="0.55" text-anchor="end">
+            <text x="50" y="188">0</text>
+            <text x="50" y="148">40</text>
+            <text x="50" y="108">80</text>
+            <text x="50" y="68">120</text>
+            <text x="50" y="28">160</text>
+          </g>
+          <!-- scale: 160 count = 160px (y=184 is 0, y=24 is 160) -->
+          <!-- Test files: 18 and 0. x groups at 96-248, 280-432, 464-616 -->
+          <rect x="100" y="166" width="52" height="18" fill="var(--chart-clean)" />
+          <rect x="160" y="184" width="52" height="0" fill="var(--chart-convex)" />
+          <text x="126" y="162" text-anchor="middle" font-size="11" fill="var(--chart-clean)">18</text>
+          <text x="186" y="180" text-anchor="middle" font-size="11" fill="var(--chart-convex)">0</text>
+
+          <rect x="300" y="179" width="52" height="5" fill="var(--chart-clean)" />
+          <rect x="360" y="183" width="52" height="1" fill="var(--chart-convex)" />
+          <text x="326" y="175" text-anchor="middle" font-size="11" fill="var(--chart-clean)">5</text>
+          <text x="386" y="179" text-anchor="middle" font-size="11" fill="var(--chart-convex)">1</text>
+
+          <rect x="500" y="40" width="52" height="144" fill="var(--chart-clean)" />
+          <rect x="560" y="152" width="52" height="32" fill="var(--chart-convex)" />
+          <text x="526" y="36" text-anchor="middle" font-size="11" fill="var(--chart-clean)">144</text>
+          <text x="586" y="148" text-anchor="middle" font-size="11" fill="var(--chart-convex)">32</text>
+
+          <g fill="currentColor" font-size="12" text-anchor="middle">
+            <text x="156" y="208">Test files</text>
+            <text x="356" y="208">Workspace packages</text>
+            <text x="556" y="208">Hand-written TS/TSX</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><i style="background:var(--chart-clean)"></i>clean-chat</span>
+          <span><i style="background:var(--chart-convex)"></i>convex-chat</span>
+        </div>
+        <p class="muted">Source: both repos as of 11 Sep 2026. Y-axis is file/package count. Convex generated files under <code>convex/_generated/</code> are excluded.</p>
+      </div>
+      <p class="muted">More files is not automatically better — it is the cost of owning layers Convex hides.</p>
+
+      <div class="callout neutral">
+        <div class="title">Same product constraints</div>
+        Both apps: any signed-in user sees every channel; author-only delete; no email verification or password reset; React text nodes for messages (no HTML); password min 8 characters, hashed with scrypt; selected channel is React state, not a router.
+      </div>
+    </section>
+
+    <section class="panel" id="panel-robustness" role="tabpanel" aria-labelledby="tab-robustness" hidden>
+      <p>Convex Chat is operationally sturdier. Clean Chat is more explicit about what happens when input, auth, or a transaction fails — and those behaviors are covered by tests.</p>
+
+      <h2>Where each one holds up</h2>
+      <table>
+        <thead>
+          <tr><th>Concern</th><th>clean-chat</th><th>convex-chat</th><th>Edge</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tone-success"><td><span class="dot"></span>Automated tests</td><td>18 Vitest files: interactors (mocked ports), HTTP, SQL, memory, SSE client</td><td>None. No test script.</td><td>clean-chat</td></tr>
+          <tr class="tone-info"><td><span class="dot"></span>Transactions</td><td>One <code>execute</code> = one <code>UnitOfWork.run</code>. Memory adapter serializes concurrent runs; SQL uses libSQL write txs.</td><td>Each mutation is a Convex transaction. Throw aborts the write.</td><td>convex-chat</td></tr>
+          <tr class="tone-info"><td><span class="dot"></span>Process restart</td><td>SQLite keeps channels/messages. Password hashes and bearer sessions stay in RAM — logins die with the process.</td><td>Auth tables, JWTs, and documents live on the deployment.</td><td>convex-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Invalid input</td><td>TypeBox <code>Value.Check</code> on every use case. Invalid JSON → 400. Body &gt; 16kb → 413. Unexpected errors → 500 without a stack.</td><td><code>v.string</code> / <code>v.id</code> at the Convex boundary; length and slug rules are <code>if</code> throws in handlers.</td><td>clean-chat</td></tr>
+          <tr class="tone-warning"><td><span class="dot"></span>Realtime reconnect</td><td>One multiplexed <code>GET /events</code> SSE stream; exponential backoff 500ms–10s; stops on 401/403. No SSE ping comments — idle proxies may drop quiet streams.</td><td>Convex React client WebSocket; <code>useQuery</code> resubscribes. Platform-owned.</td><td>split</td></tr>
+          <tr class="tone-info"><td><span class="dot"></span>Typing expiry</td><td>3s TTL on read; UI also hides stale rows. No delayed job.</td><td><code>scheduler.runAfter(3000, clearIfStale)</code> with <code>updatedAt</code> compare. Extra jobs no-op.</td><td>convex-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Presence after a crashed tab</td><td><code>lastSeenAt</code> + 30s expire; list deletes stale rows; sweeper every 5s. Disconnect requires the signed-in session.</td><td><code>@convex-dev/presence</code> heartbeats; <code>sendBeacon</code> disconnect with no JWT.</td><td>split</td></tr>
+          <tr class="tone-warning"><td><span class="dot"></span>Database down</td><td>libSQL throw → 500. No health check or circuit breaker.</td><td>Platform availability / retries. App code does not handle this.</td><td>split</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Failure modes</h2>
+      <table>
+        <thead>
+          <tr><th>If this happens</th><th>clean-chat</th><th>convex-chat</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Two tabs write at once</td><td>In-memory UoW queues; SQLite transactions isolate.</td><td>Convex serializes conflicting document writes.</td></tr>
+          <tr><td>User signs out while events are open</td><td>Session revoke closes SSE for that bearer.</td><td>Auth session ends; queries go signed-out (<code>[]</code> / <code>null</code>).</td></tr>
+          <tr><td>Auth form hammered</td><td>10 sign-in/sign-up attempts per IP per 15 min → 429. In-memory map, no <code>trust proxy</code>.</td><td>Convex Auth <code>authRateLimits</code> table (library). No app limit on send/create.</td></tr>
+          <tr><td>Message body 2001 chars</td><td>Rejected by domain schema / interactor before insert.</td><td>Rejected in <code>messages.send</code> after trim.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warning">
+        <div class="title">Clean Chat ops gap</div>
+        Auth is still <code>createInMemoryAuth</code> even when chat data is SQLite. A restart or second Node process does not share sessions or password hashes. Convex does not have that split-brain.
+      </div>
+    </section>
+
+    <section class="panel" id="panel-security" role="tabpanel" aria-labelledby="tab-security" hidden>
+      <p>Neither app is a hardened messenger. Relative to each other: Clean Chat treats the HTTP edge as a threat surface; Convex Chat treats credential storage and session issuance as a platform problem — and leaves presence list/disconnect weakly authenticated on purpose.</p>
+
+      <h2>Controls that match</h2>
+      <table>
+        <thead>
+          <tr><th>Control</th><th>Both do this</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Password hashing</td><td>scrypt (Clean Chat: N=16384, r=8, p=1, 32-byte hash, <code>timingSafeEqual</code>. Convex: Lucia Scrypt via <code>@convex-dev/auth</code>).</td></tr>
+          <tr><td>Authorization model</td><td>Any signed-in user reads all channels and messages. Delete only own messages.</td></tr>
+          <tr><td>XSS on message body</td><td>React text children, not <code>dangerouslySetInnerHTML</code>.</td></tr>
+          <tr><td>SQL / query injection</td><td>Clean Chat uses parameterized <code>?</code> args. Convex document API does not concatenate SQL.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Where they diverge</h2>
+      <table>
+        <thead>
+          <tr><th>Control</th><th>clean-chat</th><th>convex-chat</th><th>Edge</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tone-info"><td><span class="dot"></span>Credential durability</td><td>User rows persist (SQLite). Hashes and bearer map are process-local.</td><td><code>authAccounts</code> / sessions / refresh tokens on the deployment. JWT RS256.</td><td>convex-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Session in the browser</td><td><code>localStorage</code> key <code>clean-chat.bearer</code>. XSS can steal it. No cookies, so classic CSRF is mostly N/A.</td><td><code>ConvexAuthProvider</code> manages the Convex session. Password flow is not a cookie form post to your origin.</td><td>convex-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Realtime auth</td><td>SSE requires a bearer session. Cap 16 streams per token → 429. Revoke closes the socket.</td><td>Queries are live over the authenticated Convex client. Signed-out list queries return <code>[]</code>.</td><td>clean-chat (explicit)</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Presence disconnect</td><td>Must be the signed-in user (<code>PRESENCE_DISCONNECT_FORBIDDEN</code>). <code>keepalive</code> POST on pagehide.</td><td><code>presence.disconnect</code> has no auth: <code>sendBeacon</code> cannot attach the JWT. <code>sessionToken</code> is a capability.</td><td>clean-chat</td></tr>
+          <tr class="tone-info"><td><span class="dot"></span>Presence list</td><td>Authenticated use case.</td><td><code>presence.list</code> has no auth; keyed by <code>roomToken</code> so clients share a cache. Knowing the token lists names.</td><td>clean-chat</td></tr>
+          <tr class="tone-warning"><td><span class="dot"></span>CORS / headers</td><td><code>*</code> CORS only on loopback; off-loopback <code>*</code> throws. nosniff, DENY frame, no-referrer. No CSP or HSTS.</td><td>Convex Cloud origin model. App does not set Express headers.</td><td>split</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Request size / login DoS</td><td>16kb JSON cap; password max 128; auth rate limit 10/15min.</td><td>Library auth rate limits. No app cap on <code>messages.send</code> or typing upserts. Schema stores unconstrained strings.</td><td>clean-chat</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Authz matrix (writes)</h3>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>clean-chat</th><th>convex-chat</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Sign up / sign in</td><td>Public; rate-limited</td><td>Public; library rate limits</td></tr>
+          <tr><td>Get current user</td><td>Returns null if signed out</td><td><code>users.viewer</code> → null</td></tr>
+          <tr><td>List channels / messages</td><td>401 if no session</td><td>Signed-out → <code>[]</code></td></tr>
+          <tr><td>Send / create channel</td><td><code>requireUser</code></td><td><code>requireUserId</code></td></tr>
+          <tr><td>Delete message</td><td>Author only → 403</td><td>Author only → Error</td></tr>
+          <tr><td>SSE / live data</td><td>Bearer required</td><td>Convex client session</td></tr>
+          <tr><td>Presence disconnect</td><td>Authenticated</td><td>Unauthenticated + sessionToken</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout danger">
+        <div class="title">Do not treat either as production auth</div>
+        No email verification, no password reset, no OAuth, no CSP. Clean Chat tokens in <code>localStorage</code> plus missing CSP is a session-theft story if any XSS appears later. Convex presence <code>list</code>/<code>disconnect</code> are documented shortcuts, not a security boundary.
+      </div>
+    </section>
+
+    <section class="panel" id="panel-maintainability" role="tabpanel" aria-labelledby="tab-maintainability" hidden>
+      <p>This is the pillar the port was built to win. Clean Chat encodes the dependency rule in packages. Convex Chat encodes the product in a small, generated-type surface that the UI imports directly.</p>
+
+      <h2>Change cost</h2>
+      <table>
+        <thead>
+          <tr><th>Change</th><th>clean-chat</th><th>convex-chat</th><th>Easier in</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tone-success"><td><span class="dot"></span>Tighten a domain rule (e.g. body length)</td><td>TypeBox schema in core; interactors and HTTP inherit it; tests assert the error string.</td><td>Edit the mutation <code>if</code>; client may still send bad payloads until the server throws.</td><td>clean-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Swap persistence</td><td><code>createServer({ persistence })</code>. Memory and SQLite already exist.</td><td>Opaque document store. Not a SQL schema you query.</td><td>clean-chat</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Swap the UI transport</td><td>SPA depends on <code>Client</code>. HTTP is one adapter; another transport can implement the same type.</td><td>Almost every component imports <code>useQuery</code> / <code>useMutation</code> / <code>api.*</code>.</td><td>clean-chat</td></tr>
+          <tr class="tone-info"><td><span class="dot"></span>Add a field and keep FE/BE in sync</td><td>Share TypeBox types from core. No codegen step.</td><td><code>npx convex dev</code> regenerates <code>convex/_generated</code>. Strong coupling, fewer handwritten types.</td><td>convex-chat (codegen)</td></tr>
+          <tr class="tone-success"><td><span class="dot"></span>Unit-test a use case without I/O</td><td>Interactor tests mock ports (<code>doubles.ts</code>).</td><td>Handlers close over <code>ctx.db</code> / scheduler / Auth. Need a Convex harness or extraction.</td><td>clean-chat</td></tr>
+          <tr class="tone-warning"><td><span class="dot"></span>Onboard a new engineer</td><td>More files and layers to learn; <code>AGENTS.md</code> + <code>ARCHITECTURE.md</code> map them.</td><td>Fewer files; must learn Convex queries, components, and generated APIs.</td><td>split</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Coupling</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="card-h">clean-chat UI depends on</div>
+          <div class="card-b">
+            <p class="small"><code>@clean-chat/client</code> (<code>Client</code>) and <code>@clean-chat/core</code> (domain constants, events). Not application, not infrastructure.</p>
+            <p class="small lede"><code>ClientProvider</code> + live-query hooks call <code>execute</code> and <code>eventSubscriber.subscribe</code>, then re-run the matching query.</p>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-h">convex-chat UI depends on</div>
+          <div class="card-b">
+            <p class="small"><code>convex/react</code>, <code>convex/_generated/api</code>, <code>Id&lt;"channels"&gt;</code>, <code>ConvexAuthProvider</code>, <code>@convex-dev/presence/react</code>.</p>
+            <p class="small lede">Live reads are <code>useQuery</code>. There is no port between React and the backend.</p>
+          </div>
+        </article>
+      </div>
+
+      <h2>Docs and conventions</h2>
+      <p>Both repos document the product well (<code>PRODUCT.md</code>, <code>ARCHITECTURE.md</code>, <code>AGENTS.md</code>). Clean Chat adds a layer rule, schema-first domain, and JSDoc on ports/use cases. Convex Chat documents what not to copy (<code>api.*</code>, <code>_id</code>, presence tokens) — which is exactly what its UI is built on.</p>
+
+      <h3>Validation sharing</h3>
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>clean-chat</th><th>convex-chat</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Channel slug 1–32, <code>^[a-z0-9-]+$</code></td><td>Domain TypeBox + normalize in one place</td><td>Server <code>normalizeChannelName</code> + throws; client only disables empty submit</td></tr>
+          <tr><td>Message 1–2000 chars</td><td>Domain schema on the write path</td><td>Server <code>if</code>; client disables empty only</td></tr>
+          <tr><td>Password 8+</td><td>Domain schema (also max 128)</td><td>Library default + <code>minLength={8}</code> on the form</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout success">
+        <div class="title">Teaching vs operating</div>
+        Use Clean Chat to learn (and keep) a dependency rule you can unit-test. Use Convex Chat to ship the same UX with almost no backend of your own. The maintainability win is real; it is also why Clean Chat has ~4× the TypeScript and still weaker auth durability.
+      </div>
+
+      <h2>What “owning the stack” costs</h2>
+      <p class="muted">Approximate share of concerns the app author must implement. Not a quality score.</p>
+      <div class="bar-wrap">
+        <p class="small">clean-chat — you implement most of the runtime</p>
+        <div class="bar" role="img" aria-label="clean-chat 82 percent app-owned"><span class="you" style="width:82%"></span><span class="plat" style="width:18%"></span></div>
+        <p class="muted">82% app-owned · 18% platform-owned (illustrative)</p>
+        <p class="small">convex-chat — platform implements persistence, auth HTTP, live query, scheduler</p>
+        <div class="bar" role="img" aria-label="convex-chat 28 percent app-owned"><span class="you" style="width:28%"></span><span class="plat" style="width:72%"></span></div>
+        <p class="muted">28% app-owned · 72% platform-owned (illustrative)</p>
+      </div>
+    </section>
+
+    <p class="source">Source: both repos as of 11 Sep 2026. Product rules are identical; architecture, tests, and ops differ. Standalone HTML export of the Cursor canvas comparison. Open this file in a browser; no server required.</p>
+  </main>
+
+  <script>
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+      var panels = Array.prototype.slice.call(document.querySelectorAll(".panel"));
+
+      function show(id) {
+        tabs.forEach(function (tab) {
+          var on = tab.getAttribute("aria-controls") === id;
+          tab.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        panels.forEach(function (panel) {
+          panel.hidden = panel.id !== id;
+        });
+        if (history.replaceState) {
+          history.replaceState(null, "", "#" + id.replace("panel-", ""));
+        }
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          show(tab.getAttribute("aria-controls"));
+        });
+      });
+
+      var hash = (location.hash || "").replace("#", "");
+      var initial = hash && document.getElementById("panel-" + hash);
+      if (initial) show(initial.id);
+    })();
+  </script>
+</body>
+</html>
